@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoJSON Visualization</title>
     <script src="d3.js"></script>
+    <script src="d3-interpolate-path.js"></script>
+    <script src="turf.min.js" charset="utf-8"></script>
     <style>
          body {
             display: flex;
@@ -38,10 +40,16 @@
             stroke: palegreen;
             stroke-width: 4;
         }
+        .animated-dot {
+            fill: blue;
+            stroke: black;
+            stroke-width: 1;
+        }
     </style>
 </head>
 <body>
     <svg id="map" width="1280" height="740"></svg>
+    <!-- <script src="https://unpkg.com/d3-interpolate-path/build/d3-interpolate-path.min.js"></script> -->
     <script>
         
         
@@ -78,16 +86,69 @@
                 .attr("d", path);
         });
 
-        // Load lines
+        // Load lines and animate a blue dot
         d3.json("USMX_finalStationLine.json").then(linesData => {
-            svg.selectAll("path")
-                .data(linesData.features)
-                .enter()
-                .append("path")
+            const lineFeature = linesData.features[0]; // Assuming you want to animate the blue dot on the first line
+            const linePath = path(lineFeature);
+
+            svg.append("path")
                 .attr("class", "line")
-                .attr("d", path);
+                .attr("d", linePath);
+
+            const startPoint = projection(lineFeature.geometry.coordinates[0]);
+
+            const animatedDot = svg.append("circle")
+                .attr("class", "animated-dot")
+                .attr("r", 4)
+                .attr("transform", "translate(" + startPoint + ")");
+
+            const lineDistance = lineFeature.geometry.coordinates.length > 0 ? turf.length(lineFeature) : 0;
+
+            function animate() {
+                const lineFeature = linesData.features[0];
+                const lineString = turf.lineString(lineFeature.geometry.coordinates);
+                const lineDistance = turf.length(lineString, { units: 'miles' });
+                const duration = 7000; // 7 seconds
+
+                const svgLine = svg
+                    .append('path')
+                    .datum(lineFeature)
+                    .attr('d', path)
+                    .attr('fill', 'none')
+                    .attr('stroke', 'black');
+
+                const movingDot = svg.append('circle')
+                    .attr('r', 4)
+                    .attr('fill', 'blue')
+                    .attr('transform', `translate(${pathStartPoint(svgLine)})`);
+
+                d3.interval(() => {
+                    movingDot
+                    .transition()
+                    .duration(duration / 2)
+                    .attrTween('transform', translateAlongPath(svgLine, 0, 1))
+                    .transition()
+                    .duration(duration / 2)
+                    .attrTween('transform', translateAlongPath(svgLine, 1, 0));
+                }, duration);
+                }
+
+                function pathStartPoint(pathNode) {
+                return pathNode.node().getPointAtLength(0);
+                }
+
+                function translateAlongPath(pathNode, startFraction, endFraction) {
+                const totalLength = pathNode.node().getTotalLength();
+                const startPoint = totalLength * startFraction;
+                const endPoint = totalLength * endFraction;
+
+                return function (t) {
+                    const currentPoint = startPoint + (endPoint - startPoint) * t;
+                    const p = pathNode.node().getPointAtLength(currentPoint);
+                    return `translate(${p.x},${p.y})`;
+                };
+                }
         });
-        
 
         // Load point locations
         d3.json("USMX_finalStationPoint.json").then(pointsData => {

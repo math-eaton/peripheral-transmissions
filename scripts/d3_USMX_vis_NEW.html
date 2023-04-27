@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Visualization</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v2.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
+    <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+        svg {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Width and height of the SVG
+        const width = 800;
+        const height = 600;
+
+        // Create the SVG
+        const svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+       // Define the map projection
+       const projection = d3.geoTransverseMercator()
+            .translate([width / 2, height / 2])
+            .scale(3333)
+            .rotate([113, -30]);
+
+        // Define the path generator
+        const path = d3.geoPath().projection(projection);
+
+        // Load the GeoJSON data
+        Promise.all([
+            d3.json("USMX_finalStationPoint.json"),
+            d3.json("USMX_finalStationLine_DISSOLVE.json"),
+            d3.json("ne_50m_coastline.json"),
+        ]).then(([points, lines, coastline]) => {
+            // Draw the coastline
+            svg.append("g")
+                .selectAll("path")
+                .data(coastline.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .style("fill", "lightblue")
+                .style("stroke", "none");
+
+            // Draw the points
+            svg.append("g")
+                .selectAll("circle")
+                .data(points.features)
+                .enter()
+                .append("circle")
+                .attr("cx", d => projection(d.geometry.coordinates)[0])
+                .attr("cy", d => projection(d.geometry.coordinates)[1])
+                .attr("r", 4)
+                .style("fill", "red");
+
+            // Draw the lines
+            const linePaths = svg.append("g")
+                .selectAll("path")
+                .data(lines.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .style("stroke", "black")
+                .style("fill", "none")
+                .attr("class", (d, i) => `line${i}`);
+
+            // Create the moving blue dot
+            const initialLine = linePaths.nodes()[0];
+            const movingDot = svg.append("circle")
+                .attr("r", 4)
+                .attr("fill", "blue")
+                .attr("transform", `translate(${pathStartPoint(initialLine)})`);
+
+            // Animate the blue dot
+            const duration = 3500;
+            let currentLineIndex = 0;
+
+            d3.interval(() => {
+                const linePath = linePaths.nodes()[currentLineIndex];
+                const lineDistance = linePath.getTotalLength();
+
+                movingDot.transition()
+                    .duration(duration)
+                    .attrTween("transform", translateAlongPath(linePath, lineDistance, 0, 1))
+                    .transition()
+                    .duration(duration)
+                    .attrTween("transform", translateAlongPath(linePath, lineDistance, 1, 0))
+                    .on("end", () => {
+                        currentLineIndex = (currentLineIndex + 1) % lines.features.length;
+                        movingDot.attr("transform", `translate(${pathStartPoint(linePaths.nodes()[currentLineIndex])})`);
+                    });
+            }, duration * 2);
+
+            function pathStartPoint(svgPath) {
+                const startPoint = svgPath.getPointAtLength(0);
+                return [startPoint.x, startPoint.y];
+            }
+
+            function translateAlongPath(svgPath, lineDistance, start, end) {
+                return function (t) {
+                    const distance = lineDistance * ((end - start) * t + start);
+                    const point = svgPath.getPointAtLength(distance);
+                    return `translate(${point.x},${point.y})`;
+                };
+            }
+            
+            });
+</script>
+</body>
+</html>
