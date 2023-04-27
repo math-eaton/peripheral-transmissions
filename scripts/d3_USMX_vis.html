@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Visualization</title>
+    <script src="d3.js"></script>
+    <style>
+         body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: blue;
+        }
+        svg {
+            border: 0px solid black;
+        }
+        .ocean {
+            fill: blue;
+        }
+        .coastline {
+            fill: none;
+            stroke: palegreen;
+            stroke-width: 1;
+        }
+        .point {
+            fill: lime;
+            stroke: palegreen;
+            stroke-width: 1;
+        }
+        .line {
+            stroke: lime;
+            stroke-width: 3;
+        }
+        .lineStroke {
+            stroke: palegreen;
+            stroke-width: 4;
+        }
+    </style>
+</head>
+<body>
+    <svg id="map" width="1280" height="740"></svg>
+    <script>
+        
+        
+        const svg = d3.select("#map");
+        const width = +svg.attr("width");
+        const height = +svg.attr("height");
+        const points = "./data/geojson/USMX_finalStationPoint.json"
+        const lines = "./data/geojson/USMX_finalStationLine.json"
+
+        const projection = d3.geoTransverseMercator()
+            .translate([width / 2, height / 2])
+            .scale(2800)
+            .rotate([107, -30]);
+
+        const path = d3.geoPath()
+            .projection(projection);
+
+        // // Draw ocean background
+        const ocean = {
+            type: "Sphere"
+        };
+        svg.append("path")
+            .datum(ocean)
+            .attr("class", "ocean")
+            .attr("d", path);
+
+        // Load and render coastline
+        d3.json("ne_50m_coastline.json").then(coastlineData => {
+            svg.selectAll("path.coastline")
+                .data(coastlineData.features)
+                .enter()
+                .append("path")
+                .attr("class", "coastline")
+                .attr("d", path);
+        });
+
+        // Load lines
+        d3.json("USMX_finalStationLine.json").then(linesData => {
+            svg.selectAll("path")
+                .data(linesData.features)
+                .enter()
+                .append("path")
+                .attr("class", "line")
+                .attr("d", path);
+        });
+        
+
+        // Load point locations
+        d3.json("USMX_finalStationPoint.json").then(pointsData => {
+            svg.selectAll("circle")
+                .data(pointsData.features)
+                .enter()
+                .append("circle")
+                .attr("class", "point")
+                .attr("cx", d => projection(d.geometry.coordinates)[0])
+                .attr("cy", d => projection(d.geometry.coordinates)[1])
+                .attr("r", 4);
+        });
+
+        
+    </script>
+</body>
+</html>

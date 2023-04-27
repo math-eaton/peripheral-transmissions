@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "csv": "^6.2.10",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "d3-geo-projection": "^4.0.0",
+    "playwright": "^1.32.3"
+  }
+}
