@@ -79,6 +79,15 @@
     <div style="height: 10000px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;"></svg>
     </div>
+    <audio id="audio-1" loop>
+        <source src="audio-file-1.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <audio id="audio-2" loop>
+        <source src="audio-file-2.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>  
     <script>
         // Width and height of the SVG
         const width = 800;
@@ -105,6 +114,15 @@
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1]);
         }
+
+        function updateAudioVolumes(scrollPercentage) {
+            const audio1 = document.getElementById("audio-1");
+            const audio2 = document.getElementById("audio-2");
+
+            audio1.volume = 1 - scrollPercentage;
+            audio2.volume = scrollPercentage;
+        }
+
     
         // Load the GeoJSON data
         Promise.all([
@@ -146,6 +164,8 @@
         function updateMapOnScroll() {
             const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
+            
+
             if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
                 lastScrollPercentage = scrollPercentage;
 
@@ -184,12 +204,31 @@
                 .rotate(currentRotate);
 
             updateMap();
+            
                  });  
+                 
             }
+
+        updateAudioVolumes(scrollPercentage);
+ 
         }
         window.addEventListener('scroll', updateMapOnScroll, { passive: true });
-    });
-</script>
 
+    function updateAudioVolumes(scrollPercentage) {
+    const audio1 = document.getElementById("audio-1");
+    const audio2 = document.getElementById("audio-2");
+
+    audio1.volume = 1 - scrollPercentage;
+    audio2.volume = scrollPercentage;
+}
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const audio1 = document.getElementById("audio-1");
+        const audio2 = document.getElementById("audio-2");
+        audio1.play();
+        audio2.play();
+
+        })});
+    </script>
 </body>
 </html>
