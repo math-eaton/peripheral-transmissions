@@ -9,7 +9,8 @@
     <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
     <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-      <style>
+    <script src="//unpkg.com/d3-geo-zoom"></script>
+        <style>
             body {
             margin: 0;
             background: rgb(25, 0, 255);
@@ -58,11 +59,11 @@
         .point {
             fill: palegreen;
             stroke: rgb(30, 0, 255);
-            stroke-width: 1;
+            stroke-width: 1.5;
         }
         .line {
             stroke: palegreen;
-            stroke-width: 2;
+            stroke-width: 3;
         }
         .coast{
             fill: rgb(30, 0, 255);
@@ -166,7 +167,7 @@
                 .attr("class", "point")
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
-                .attr("r", 5.5);
+                .attr("r", 6);
 
             // Draw the buffers
             svg.append("g")
