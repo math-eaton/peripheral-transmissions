@@ -80,7 +80,7 @@
     </style>
 </head>
 <body>
-    <div style="height: 2000px; position: relative;">
+    <div style="height: 10000px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;"></svg>
     </div>
     <script>
@@ -94,20 +94,20 @@
             .attr("width", width)
             .attr("height", height);
     
-        // Define the map projection
+        // Define the initial map projection
         const projection = d3.geoTransverseMercator()
             .translate([width / 2, height / 1.8])
-            .scale(3333)
-            .rotate([113, -30]);
+            .scale(4000)
+            .rotate([115, -32]);
     
         // Define the path generator
         const path = d3.geoPath().projection(projection);
-
+    
         function updateMap() {
-        svg.selectAll("path").attr("d", path);
-        svg.selectAll(".point")
-            .attr("cx", d => projection(d.geometry.coordinates)[0])
-            .attr("cy", d => projection(d.geometry.coordinates)[1]);
+            svg.selectAll("path").attr("d", path);
+            svg.selectAll(".point")
+                .attr("cx", d => projection(d.geometry.coordinates)[0])
+                .attr("cy", d => projection(d.geometry.coordinates)[1]);
         }
     
         // Load the GeoJSON data
@@ -145,86 +145,35 @@
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
                 .attr("r", 4);
     
-            // // Animate the viewport from the first point to the last point
-            // const duration = 15000;
+            function updateMapOnScroll() {
+                const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
     
-            // function animateViewport() {
-            //     const startPoint = points.features[0].geometry.coordinates;
-            //     const endPoint = points.features[points.features.length - 1].geometry.coordinates;
+                // Define the start and end projection parameters
+                const startScale = 18000;
+                const endScale = 5000;
+                const startRotate = [118, -33];
+                const endRotate = [105, -28];
     
-            //     svg.transition()
-            //         .duration(duration)
-            //         .tween("projection", () => {
-            //             const startTranslate = projection(startPoint);
-            //             const endTranslate = projection(endPoint);
+                // Interpolate between the start and end projection parameters
+                const currentScale = startScale + scrollPercentage * (endScale - startScale);
+                const currentRotate = [
+                    startRotate[0] + scrollPercentage * (endRotate[0] - startRotate[0]),
+                    startRotate[1] + scrollPercentage * (endRotate[1] - startRotate[1]),
+                ];
     
-            //             const interpolateX = d3.interpolate(startTranslate[0], endTranslate[0]);
-            //             const interpolateY = d3.interpolate(startTranslate[1], endTranslate[1]);
+                // Update the projection with the current parameters
+                projection.scale(currentScale).rotate(currentRotate);
+                updateMap();
+            }
     
-            //             return t => {
-            //                 const translate = [interpolateX(t), interpolateY(t)];
-            //                 projection.translate(translate);
-            //                 svg.selectAll("path")
-            //                     .attr("d", path);
-            //                 svg.selectAll("circle")
-            //                     .attr("cx", d => projection(d.geometry.coordinates)[0])
-            //                     .attr("cy", d => projection(d.geometry.coordinates)[1]);
-            //             };
-            //         });
-            // }
+            function smoothScrollHandler() {
+                updateMapOnScroll();
+                requestAnimationFrame(smoothScrollHandler);
+            }
     
-            // animateViewport();
-
-        // Get the scrollable element
-        const scrollableElement = document.documentElement.scrollHeight > document.documentElement.clientHeight
-        ? document.documentElement
-        : document.body;
-
-        // Calculate the total scrollable height
-        const scrollHeight = scrollableElement.scrollHeight - scrollableElement.clientHeight;
-
-        // Animate the viewport based on the scroll position
-        function animateViewport() {
-            const startPoint = points.features[0].geometry.coordinates;
-            const endPoint = points.features[points.features.length - 1].geometry.coordinates;
-
-            const startTranslate = projection(startPoint);
-            const endTranslate = projection(endPoint);
-
-            const interpolateX = d3.interpolate(startTranslate[0], endTranslate[0]);
-            const interpolateY = d3.interpolate(startTranslate[1], endTranslate[1]);
-
-            const scrollProgress = scrollableElement.scrollTop / scrollHeight;
-            const translate = [interpolateX(scrollProgress), interpolateY(scrollProgress)];
-
-            projection.translate(translate);
-            svg.selectAll("path").attr("d", path);
-            svg.selectAll("circle")
-                .attr("cx", d => projection(d.geometry.coordinates)[0])
-                .attr("cy", d => projection(d.geometry.coordinates)[1]);
-        }
-
-        // Add a scroll event listener to update the viewport on scroll
-        function scrollHandler() {
-            const scrollPercentage = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-            const firstPoint = points.features[0];
-            const lastPoint = points.features[points.features.length - 1];
-            const startCoords = projection(firstPoint.geometry.coordinates);
-            const endCoords = projection(lastPoint.geometry.coordinates);
-            const currentCoords = [
-                startCoords[0] + scrollPercentage * (endCoords[0] - startCoords[0]),
-                startCoords[1] + scrollPercentage * (endCoords[1] - startCoords[1]),
-            ];
-            projection.translate([width / 2 - currentCoords[0], height / 1.8 - currentCoords[1]]);
-            updateMap();
-        }
-
-
-        window.addEventListener("scroll", scrollHandler);
-
-
-    });
-
-    </script>
+            smoothScrollHandler();
+    
+        });
+    </script>    
 </body>
 </html>
