@@ -26,7 +26,7 @@
             pointer-events: none; /* Ignore mouse interactions with the SVG */
         }
         .scroll-container {
-            height: 9001px;
+            height: 7200px;
             position: relative;
         }
          /* body {
@@ -82,7 +82,7 @@
     </style>
 </head>
 <body>
-    <div style="height: 9001px; position: relative;">
+    <div style="height: 7200px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0;"></svg>
     </div>
     <audio id="audio-1" loop>
@@ -98,6 +98,8 @@
         // Width and height of the SVG
         const width = 800;
         const height = 600;
+
+        const roll = 15
     
         // Create the SVG
         const svg = d3.select("body")
@@ -208,9 +210,9 @@
                 const midScale = 10000;
                 const endScale = 4000;
     
-                const startRotate = [116.4, -34.6];
-                const midRotate = [110, -34]; // Example midpoint
-                const endRotate = [98, -34.5];
+                const startRotate = [116.4, -34.6, roll];
+                const midRotate = [110, -34, roll*2]; // Example midpoint
+                const endRotate = [98, -34.5, roll*4];
     
                 let currentScale, currentRotate;
     
