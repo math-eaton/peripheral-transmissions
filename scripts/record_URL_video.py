@@ -2,31 +2,35 @@ import asyncio
 import os
 import csv
 from pyppeteer import launch
-import sounddevice as sd
-import numpy as np
 
-browser = None
-
-async def record_audio_from_page(url):
+async def record_audio_video_from_page(url):
     global browser
     page = await browser.newPage()
     await page.setViewport({"width": 1280, "height": 720})
 
     await page.goto(url)
-    await asyncio.sleep(3)  # Wait for 5 seconds
+    await asyncio.sleep(3)  # Wait for 3 seconds
     await page.mouse.click(640, 360)  # Click on the center of the viewport
-    await asyncio.sleep(3)  # Wait for 5 seconds
+    await asyncio.sleep(3)  # Wait for 3 seconds
 
-    duration = 5  # seconds
-    sampling_rate = 44100
-    audio_data = np.empty((duration * sampling_rate,), dtype=np.float32)
+    output_filename = f"{os.path.basename(url)}.webm"
+    await page.evaluate('''async () => {
+        const mimeType = 'video/webm; codecs="vp8, opus"';
+        const mediaRecorder = new MediaRecorder(document.querySelector('video, audio').captureStream(), { mimeType });
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.start();
+        await new Promise((resolve) => setTimeout(resolve, 30 * 1000));
+        mediaRecorder.stop();
+        const blob = new Blob(chunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'output.webm';
+        a.click();
+    }''')
 
-    with sd.InputStream(callback=lambda indata, frames, time, status: audio_data.put(indata), samplerate=sampling_rate, channels=1):
-        await asyncio.sleep(duration)  # Wait for 30 seconds
-
-    output_filename = f"{os.path.basename(url)}.wav"
-    sd.write_wav(output_filename, audio_data, sampling_rate)
-
+    await asyncio.sleep(10)  # Wait for 35 seconds to ensure the download is completed
     await page.close()
 
 async def main():
@@ -37,12 +41,12 @@ async def main():
         url_reader = csv.reader(csvfile)
         for row in url_reader:
             url = row[0]
-            await record_audio_from_page(url)
+            await record_audio_video_from_page(url)
 
 async def cleanup():
     global browser
     if browser:
         await browser.close()
 
-tasks = [main(), cleanup()]
-asyncio.run(asyncio.gather(*tasks))
+asyncio.run(main())
+asyncio.run(cleanup())

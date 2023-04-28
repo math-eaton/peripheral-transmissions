@@ -25,7 +25,7 @@
             pointer-events: none; /* Ignore mouse interactions with the SVG */
         }
         .scroll-container {
-            height: 10000px;
+            height: 9001px;
             position: relative;
         }
          /* body {
@@ -68,6 +68,11 @@
             stroke:black;
             stroke-width: .666;
         }
+        .buffer{
+            stroke:aqua;
+            stroke-width:.25;
+            fill: none;
+        }
         /* .animated-dot {
             fill: blue;
             stroke: black;
@@ -76,7 +81,7 @@
     </style>
 </head>
 <body>
-    <div style="height: 10000px; position: relative;">
+    <div style="height: 9001px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;"></svg>
     </div>
     <audio id="audio-1" loop>
@@ -129,7 +134,8 @@
             d3.json("USMX_finalStationPoint.json"),
             d3.json("USMX_finalStationLine.json"),
             d3.json("ne_50m_coastline.json"),
-        ]).then(([points, lines, coastline]) => {
+            d3.json("USMX_10_20_40_buffers.json"),
+        ]).then(([points, lines, coastline, buffers]) => {
             // Draw the coastline
             svg.append("g")
                 .selectAll("path")
@@ -158,7 +164,16 @@
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
                 .attr("r", 5.5);
-    
+
+            // Draw the buffers
+            svg.append("g")
+                .selectAll("path")
+                .data(buffers.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", "buffer");
+
         let lastScrollPercentage = 0;
 
         function updateMapOnScroll() {
