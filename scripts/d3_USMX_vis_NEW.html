@@ -9,42 +9,111 @@
     <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
     <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-    <style>
-        body {
+      <style>
+            body {
             margin: 0;
+            background: rgb(25, 0, 255);
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         svg {
             display: block;
             width: 100vw;
             height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Ignore mouse interactions with the SVG */
+        }
+        .scroll-container {
+            height: 2000px;
+            position: relative;
+        }
+         /* body {
+            margin: 0;
+            background: rgb(25, 0, 255);
+        }
+        svg {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        } */
+        /* body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: blue;
+        }
+        svg {
+            display: block;
+            width: 80vw;
+        } */
+        .coastline {
+            fill: none;
+            stroke: palegreen;
+            stroke-width: 1;
+        }
+        .point {
+            fill: palegreen;
+            stroke: black;
+            stroke-width: 1;
+        }
+        .line {
+            stroke: palegreen;
+            stroke-width: 2;
+        }
+        /* .lineStroke {
+            stroke: palegreen;
+            stroke-width: 4;
+        } */
+        .coast{
+            fill: rgb(30, 0, 255);
+            stroke:black;
+            stroke-width: .666;
+        }
+        .animated-dot {
+            fill: blue;
+            stroke: black;
+            stroke-width: 1;
         }
     </style>
 </head>
 <body>
+    <div style="height: 2000px; position: relative;">
+        <svg style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;"></svg>
+    </div>
     <script>
         // Width and height of the SVG
         const width = 800;
         const height = 600;
-
+    
         // Create the SVG
         const svg = d3.select("body")
             .append("svg")
             .attr("width", width)
             .attr("height", height);
-
-       // Define the map projection
-       const projection = d3.geoTransverseMercator()
-            .translate([width / 2, height / 2])
+    
+        // Define the map projection
+        const projection = d3.geoTransverseMercator()
+            .translate([width / 2, height / 1.8])
             .scale(3333)
             .rotate([113, -30]);
-
+    
         // Define the path generator
         const path = d3.geoPath().projection(projection);
 
+        function updateMap() {
+        svg.selectAll("path").attr("d", path);
+        svg.selectAll(".point")
+            .attr("cx", d => projection(d.geometry.coordinates)[0])
+            .attr("cy", d => projection(d.geometry.coordinates)[1]);
+        }
+    
         // Load the GeoJSON data
         Promise.all([
             d3.json("USMX_finalStationPoint.json"),
-            d3.json("USMX_finalStationLine_DISSOLVE.json"),
+            d3.json("USMX_finalStationLine.json"),
             d3.json("ne_50m_coastline.json"),
         ]).then(([points, lines, coastline]) => {
             // Draw the coastline
@@ -54,72 +123,108 @@
                 .enter()
                 .append("path")
                 .attr("d", path)
-                .style("fill", "lightblue")
-                .style("stroke", "none");
-
+                .attr("class", "coast");
+    
+            // Draw the lines
+            svg.append("g")
+                .selectAll("path")
+                .data(lines.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", "line");
+    
             // Draw the points
             svg.append("g")
                 .selectAll("circle")
                 .data(points.features)
                 .enter()
                 .append("circle")
+                .attr("class", "point")
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
-                .attr("r", 4)
-                .style("fill", "red");
+                .attr("r", 4);
+    
+            // // Animate the viewport from the first point to the last point
+            // const duration = 15000;
+    
+            // function animateViewport() {
+            //     const startPoint = points.features[0].geometry.coordinates;
+            //     const endPoint = points.features[points.features.length - 1].geometry.coordinates;
+    
+            //     svg.transition()
+            //         .duration(duration)
+            //         .tween("projection", () => {
+            //             const startTranslate = projection(startPoint);
+            //             const endTranslate = projection(endPoint);
+    
+            //             const interpolateX = d3.interpolate(startTranslate[0], endTranslate[0]);
+            //             const interpolateY = d3.interpolate(startTranslate[1], endTranslate[1]);
+    
+            //             return t => {
+            //                 const translate = [interpolateX(t), interpolateY(t)];
+            //                 projection.translate(translate);
+            //                 svg.selectAll("path")
+            //                     .attr("d", path);
+            //                 svg.selectAll("circle")
+            //                     .attr("cx", d => projection(d.geometry.coordinates)[0])
+            //                     .attr("cy", d => projection(d.geometry.coordinates)[1]);
+            //             };
+            //         });
+            // }
+    
+            // animateViewport();
 
-            // Draw the lines
-            const linePaths = svg.append("g")
-                .selectAll("path")
-                .data(lines.features)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .style("stroke", "black")
-                .style("fill", "none")
-                .attr("class", (d, i) => `line${i}`);
+        // Get the scrollable element
+        const scrollableElement = document.documentElement.scrollHeight > document.documentElement.clientHeight
+        ? document.documentElement
+        : document.body;
 
-            // Create the moving blue dot
-            const initialLine = linePaths.nodes()[0];
-            const movingDot = svg.append("circle")
-                .attr("r", 4)
-                .attr("fill", "blue")
-                .attr("transform", `translate(${pathStartPoint(initialLine)})`);
+        // Calculate the total scrollable height
+        const scrollHeight = scrollableElement.scrollHeight - scrollableElement.clientHeight;
 
-            // Animate the blue dot
-            const duration = 3500;
-            let currentLineIndex = 0;
+        // Animate the viewport based on the scroll position
+        function animateViewport() {
+            const startPoint = points.features[0].geometry.coordinates;
+            const endPoint = points.features[points.features.length - 1].geometry.coordinates;
 
-            d3.interval(() => {
-                const linePath = linePaths.nodes()[currentLineIndex];
-                const lineDistance = linePath.getTotalLength();
+            const startTranslate = projection(startPoint);
+            const endTranslate = projection(endPoint);
 
-                movingDot.transition()
-                    .duration(duration)
-                    .attrTween("transform", translateAlongPath(linePath, lineDistance, 0, 1))
-                    .transition()
-                    .duration(duration)
-                    .attrTween("transform", translateAlongPath(linePath, lineDistance, 1, 0))
-                    .on("end", () => {
-                        currentLineIndex = (currentLineIndex + 1) % lines.features.length;
-                        movingDot.attr("transform", `translate(${pathStartPoint(linePaths.nodes()[currentLineIndex])})`);
-                    });
-            }, duration * 2);
+            const interpolateX = d3.interpolate(startTranslate[0], endTranslate[0]);
+            const interpolateY = d3.interpolate(startTranslate[1], endTranslate[1]);
 
-            function pathStartPoint(svgPath) {
-                const startPoint = svgPath.getPointAtLength(0);
-                return [startPoint.x, startPoint.y];
-            }
+            const scrollProgress = scrollableElement.scrollTop / scrollHeight;
+            const translate = [interpolateX(scrollProgress), interpolateY(scrollProgress)];
 
-            function translateAlongPath(svgPath, lineDistance, start, end) {
-                return function (t) {
-                    const distance = lineDistance * ((end - start) * t + start);
-                    const point = svgPath.getPointAtLength(distance);
-                    return `translate(${point.x},${point.y})`;
-                };
-            }
-            
-            });
-</script>
+            projection.translate(translate);
+            svg.selectAll("path").attr("d", path);
+            svg.selectAll("circle")
+                .attr("cx", d => projection(d.geometry.coordinates)[0])
+                .attr("cy", d => projection(d.geometry.coordinates)[1]);
+        }
+
+        // Add a scroll event listener to update the viewport on scroll
+        function scrollHandler() {
+            const scrollPercentage = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+            const firstPoint = points.features[0];
+            const lastPoint = points.features[points.features.length - 1];
+            const startCoords = projection(firstPoint.geometry.coordinates);
+            const endCoords = projection(lastPoint.geometry.coordinates);
+            const currentCoords = [
+                startCoords[0] + scrollPercentage * (endCoords[0] - startCoords[0]),
+                startCoords[1] + scrollPercentage * (endCoords[1] - startCoords[1]),
+            ];
+            projection.translate([width / 2 - currentCoords[0], height / 1.8 - currentCoords[1]]);
+            updateMap();
+        }
+
+
+        window.addEventListener("scroll", scrollHandler);
+
+
+    });
+
+    </script>
 </body>
 </html>
