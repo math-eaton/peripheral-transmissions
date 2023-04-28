@@ -25,7 +25,7 @@
             pointer-events: none; /* Ignore mouse interactions with the SVG */
         }
         .scroll-container {
-            height: 2000px;
+            height: 10000px;
             position: relative;
         }
          /* body {
@@ -56,27 +56,23 @@
         }
         .point {
             fill: palegreen;
-            stroke: black;
+            stroke: rgb(30, 0, 255);
             stroke-width: 1;
         }
         .line {
             stroke: palegreen;
             stroke-width: 2;
         }
-        /* .lineStroke {
-            stroke: palegreen;
-            stroke-width: 4;
-        } */
         .coast{
             fill: rgb(30, 0, 255);
             stroke:black;
             stroke-width: .666;
         }
-        .animated-dot {
+        /* .animated-dot {
             fill: blue;
             stroke: black;
             stroke-width: 1;
-        }
+        } */
     </style>
 </head>
 <body>
@@ -97,8 +93,8 @@
         // Define the initial map projection
         const projection = d3.geoTransverseMercator()
             .translate([width / 2, height / 1.8])
-            .scale(3333)
-            .rotate([113, -30]);
+            .scale(18000)
+            .rotate([118, -33]);
     
         // Define the path generator
         const path = d3.geoPath().projection(projection);
@@ -143,19 +139,27 @@
                 .attr("class", "point")
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
-                .attr("r", 4);
+                .attr("r", 5.5);
     
-            function updateMapOnScroll() {
-                const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
-    
+        let lastScrollPercentage = 0;
+
+        function updateMapOnScroll() {
+            const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+
+            if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
+                lastScrollPercentage = scrollPercentage;
+
+            requestAnimationFrame(() => {
+
+
                 // Define the start, midpoint, and end projection parameters
                 const startScale = 18000;
                 const midScale = 10000;
-                const endScale = 3500;
+                const endScale = 4500;
     
                 const startRotate = [118, -33];
                 const midRotate = [110, -31.5]; // Example midpoint
-                const endRotate = [102, -28];
+                const endRotate = [103, -28];
     
                 let currentScale, currentRotate;
     
@@ -180,9 +184,10 @@
                 .rotate(currentRotate);
 
             updateMap();
+                 });  
+            }
         }
-
-        window.addEventListener('scroll', updateMapOnScroll);
+        window.addEventListener('scroll', updateMapOnScroll, { passive: true });
     });
 </script>
 
