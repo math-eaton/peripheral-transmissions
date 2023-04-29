@@ -184,23 +184,23 @@
                 .attr("d", path)
                 .attr("class", "line");
 
-            // Animate the lines
-            lineGroup.each(function (d, i) {
-                const path = d3.select(this);
-                const length = path.node().getTotalLength();
+            // // Animate the lines
+            // lineGroup.each(function (d, i) {
+            //     const path = d3.select(this);
+            //     const length = path.node().getTotalLength();
 
-                function repeat() {
-                    path.attr("stroke-dasharray", length + " " + length)
-                        .attr("stroke-dashoffset", length)
-                        .transition()
-                        .ease(d3.easeLinear)
-                        .attr("stroke-dashoffset", 0)
-                        .duration(60000)
-                        .on("end", () => setTimeout(repeat, 10000));
-                }
+            //     function repeat() {
+            //         path.attr("stroke-dasharray", length + " " + length)
+            //             .attr("stroke-dashoffset", length)
+            //             .transition()
+            //             .ease(d3.easeLinear)
+            //             .attr("stroke-dashoffset", 0)
+            //             .duration(60000)
+            //             .on("end", () => setTimeout(repeat, 10000));
+            //     }
 
-                repeat();
-            });
+            //     repeat();
+            // });
 
             // Draw the points
             svg.append("g")
@@ -240,13 +240,13 @@
         let lastScrollPercentage = 0;
 
         function updateMapOnScroll() {
+
             const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
             if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
                 lastScrollPercentage = scrollPercentage;
 
                 requestAnimationFrame(() => {
-
 
                 // Define the start, midpoint, and end projection parameters
                 const startScale = 20000;
@@ -280,6 +280,29 @@
                 .rotate(currentRotate);
 
             updateMap();
+
+            // Update the easing factor based on the scroll percentage
+            const easingFactor = 1 - scrollPercentage;
+
+            // Animate the lines
+            lineGroup.each(function (d, i) {
+                const path = d3.select(this);
+                const length = path.node().getTotalLength();
+
+                function repeat() {
+                    path.attr("stroke-dasharray", length + " " + length)
+                        .attr("stroke-dashoffset", length)
+                        .transition()
+                        .ease(d3.easeLinear)
+                        .attr("stroke-dashoffset", 0)
+                        .duration(6000 * easingFactor)
+                        .on("end", () => setTimeout(repeat, 1000 * easingFactor));
+                }
+
+                repeat();
+
+            });
+
             
                  });  
                  
@@ -288,15 +311,15 @@
         updateAudioVolumes(scrollPercentage);
  
         }
-        function debounce(func, wait) {
-            let timeout;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-}
+//         function debounce(func, wait) {
+//             let timeout;
+//             return function (...args) {
+//                 clearTimeout(timeout);
+//                 timeout = setTimeout(() => func.apply(this, args), wait);
+//             };
+// }
 
-window.addEventListener("scroll", debounce(updateMapOnScroll, 20), { passive: true });
+window.addEventListener('scroll', updateMapOnScroll, { passive: true });
 
     function updateAudioVolumes(scrollPercentage) {
     const audio1 = document.getElementById("audio-1");
