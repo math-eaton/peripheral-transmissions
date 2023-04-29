@@ -140,6 +140,7 @@
             d3.json("ne_50m_coastline.json"),
             d3.json("USMX_10_20_40_buffers.json"),
         ]).then(([points, lines, coastline, buffers]) => {
+
             // Draw the coastline
             svg.append("g")
                 .selectAll("path")
@@ -198,8 +199,6 @@
         function updateMapOnScroll() {
             const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
-            
-
             if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
                 lastScrollPercentage = scrollPercentage;
 
@@ -212,7 +211,7 @@
                 const endScale = 4000;
     
                 const startRotate = [116.4, -34.6, roll];
-                const midRotate = [110, -34, roll*2]; // Example midpoint
+                const midRotate = [110, -34, roll*2]; 
                 const endRotate = [98, -34.5, roll*4];
     
                 let currentScale, currentRotate;
@@ -246,7 +245,16 @@
         updateAudioVolumes(scrollPercentage);
  
         }
-        window.addEventListener('scroll', updateMapOnScroll, { passive: true });
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+}
+
+window.addEventListener("scroll", debounce(updateMapOnScroll, 20), { passive: true });
 
     function updateAudioVolumes(scrollPercentage) {
     const audio1 = document.getElementById("audio-1");

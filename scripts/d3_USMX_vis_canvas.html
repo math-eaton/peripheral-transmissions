@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Visualization</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v2.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
+    <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <script src="//unpkg.com/d3-geo-zoom"></script>
+    <style>
+        body {
+            margin: 0;
+            background: rgb(25, 0, 255);
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+        }
+        canvas {
+            display: block;
+            transform: rotate(90deg);
+            width: 100vw;
+            height: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Ignore mouse interactions with the canvas */
+        }
+        .scroll-container {
+            height: 7200px;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div style="height: 7200px; position: relative;">
+        <canvas id="mapCanvas" width="800" height="600" style="position: fixed; top: 0; left: 0;"></canvas>
+    </div>
+    <audio id="audio-1" loop>
+        <source src="audio-file-1.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <audio id="audio-2" loop>
+        <source src="audio-file-2.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    <script>
+        const width = 1280;
+        const height = 720;
+
+        const roll = 15
+
+        const canvas = d3.select("#mapCanvas").node();
+        const context = canvas.getContext("2d");
+
+        const projection = d3.geoTransverseMercator()
+            .translate([width / 1.8, height / 2])
+            .scale(5000)
+            .rotate([116.4, -34.6]);
+
+        const path = d3.geoPath().projection(projection).context(context);
+
+        let points, lines, coastline, buffers, graticule;
+
+        function updateMap() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawCoastline();
+            drawLines();
+            drawPoints();
+            drawBuffers();
+            drawGraticule();
+        }
+
+        function drawCoastline() {
+            context.beginPath();
+            path(coastline);
+            context.fillStyle = "rgb(30, 0, 255)";
+            context.fill();
+            context.strokeStyle = "black";
+            context.lineWidth = 0.666;
+            context.stroke();
+        }
+
+        function drawLines() {
+            context.beginPath();
+            path(lines);
+            context.strokeStyle = "palegreen";
+            context.lineWidth = 3;
+            context.stroke();
+        }
+
+        function drawPoints() {
+            context.beginPath();
+            points.features.forEach(feature => {
+                const [x, y] = projection(feature.geometry.coordinates);
+                context.moveTo(x, y);
+                context.arc(x, y, 6, 0, 2 * Math.PI);
+            });
+            context.fillStyle = "palegreen";
+            context.fill();
+            context.strokeStyle = "rgb(30, 0, 255)";
+            context.lineWidth = 1.5;
+            context.stroke();
+        }
+
+        function drawBuffers() {
+            context.beginPath();
+            path(buffers);
+            context.strokeStyle = "aqua";
+            context.lineWidth = 0.25;
+            context.stroke();
+        }
+
+        function drawGraticule() {
+            context.beginPath();
+            path(graticule);
+            context.strokeStyle = "aqua";
+            context.lineWidth = 0.25;
+            context.stroke();
+        }
+
+        Promise.all([
+            d3.json("USMX_finalStationPoint.json"),
+            d3.json("USMX_finalStationLine.json"),
+            d3.json("ne_50m_coastline.json"),
+            d3.json("USMX_10_20_40_buffers.json"),
+        ]).then(([loadedPoints, loadedLines, loadedCoastline, loadedBuffers]) => {
+            points = loadedPoints;
+            lines = loadedLines;
+            coastline = loadedCoastline;
+            buffers = loadedBuffers;
+            graticule = d3.geoGraticule10();
+
+            updateMap();
+
+            let lastScrollPercentage = 0;
+
+            function updateMapOnScroll() {
+                const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+
+                if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
+                    lastScrollPercentage = scrollPercentage;
+
+                    requestAnimationFrame(() => {
+                        const startScale = 20000;
+                        const midScale = 10000;
+                        const endScale = 4000;
+
+                        const startRotate = [116.4, -34.6, roll];
+                        const midRotate = [110, -34, roll * 2];
+                        const endRotate = [98, -34.5, roll * 4];
+
+                        let currentScale, currentRotate;
+
+                        if (scrollPercentage < 0.5) {
+                            const localPercentage = scrollPercentage * 2;
+                            currentScale = startScale + localPercentage * (midScale - startScale);
+                            currentRotate = [
+                                startRotate[0] + localPercentage * (midRotate[0] - startRotate[0]),
+                                startRotate[1] + localPercentage * (midRotate[1] - startRotate[1]),
+                            ];
+                        } else {
+                            const localPercentage = (scrollPercentage - 0.5) * 2;
+                            currentScale = midScale + localPercentage * (endScale - midScale);
+                            currentRotate = [
+                                midRotate[0] + localPercentage * (endRotate[0] - midRotate[0]),
+                                midRotate[1] + localPercentage * (endRotate[1] - midRotate[1]),
+                            ];
+                        }
+
+                        projection
+                            .scale(currentScale)
+                            .rotate(currentRotate);
+
+                        updateMap();
+                    });
+
+                }
+
+                updateAudioVolumes(scrollPercentage);
+            }
+
+            function debounce(func, wait) {
+                let timeout;
+                return function (...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+
+            window.addEventListener("scroll", debounce(updateMapOnScroll, 20), { passive: true });
+
+            function updateAudioVolumes(scrollPercentage) {
+                const audio1 = document.getElementById("audio-1");
+                const audio2 = document.getElementById("audio-2");
+
+                audio1.volume = 1 - scrollPercentage;
+                audio2.volume = scrollPercentage;
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const audio1 = document.getElementById("audio-1");
+                const audio2 = document.getElementById("audio-2");
+                audio1.play();
+                audio2.play();
+            });
+        });
+    </script>
+</body>
+</html>
