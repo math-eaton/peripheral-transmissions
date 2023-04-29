@@ -105,8 +105,6 @@
         // Width and height of the SVG
         const width = 800;
         const height = 600;
-
-        const roll = 15
     
         // Create the SVG
         const svg = d3.select("body")
@@ -250,15 +248,9 @@
                 .style("stroke-width", ".25");
 
 
-        let lastScrollPercentage = 0;
-
-        let scrollingDown = true;
 
 function updateMapOnScroll() {
     const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
-
-    // Check if the user is scrolling up or down
-    const isScrollingDown = currentScrollPercentage > lastScrollPercentage;
 
     // Reveal more of the line as the user scrolls
     lineGroup.each(function (d, i) {
@@ -270,52 +262,59 @@ function updateMapOnScroll() {
             .attr("stroke-dashoffset", currentOffset);
     });
 
-    if (isScrollingDown && currentScrollPercentage < 0.25 && lastScrollPercentage < 0.75) {
-        lastScrollPercentage = currentScrollPercentage;
+    if (currentScrollPercentage < 0.125) {
         return;
     }
 
-    if (Math.abs(currentScrollPercentage - lastScrollPercentage) > 0.001) {
-        lastScrollPercentage = currentScrollPercentage;
+    // Define the start, quarter, midpoint, and end projection parameters
+    const startScale = 20000;
+    const quarterScale = startScale;
+    const midScale = 10000;
+    const endScale = 4000;
 
-        requestAnimationFrame(() => {
-            // Define the start, midpoint, and end projection parameters
-            const startScale = 20000;
-            const midScale = 10000;
-            const endScale = 4000;
+    const startRotate = [116.4, -34.6];
+    const quarterRotate = startRotate;
+    const midRotate = [109, -34.6];
+    const endRotate = [98, -34.6];
 
-            const startRotate = [116.4, -34.6, roll];
-            const midRotate = [110, -34, roll * 2];
-            const endRotate = [98, -34.5, roll * 4];
+    let currentScale, currentRotate;
+    // console.log(currentScrollPercentage)
 
-            let currentScale, currentRotate;
 
-            if (currentScrollPercentage < 0.5) {
-                const localPercentage = currentScrollPercentage * 2;
-                currentScale = startScale + localPercentage * (midScale - startScale);
-                currentRotate = [
-                    startRotate[0] + localPercentage * (midRotate[0] - startRotate[0]),
-                    startRotate[1] + localPercentage * (midRotate[1] - startRotate[1]),
-                ];
-            } else {
-                const localPercentage = (currentScrollPercentage - 0.5) * 2;
-                currentScale = midScale + localPercentage * (endScale - midScale);
-                currentRotate = [
-                    midRotate[0] + localPercentage * (endRotate[0] - midRotate[0]),
-                    midRotate[1] + localPercentage * (endRotate[1] - midRotate[1]),
-                ];
-            }
+if (currentScrollPercentage < 0.25) {
+const localPercentage = currentScrollPercentage * 4;
+currentScale = startScale + localPercentage * (quarterScale - startScale);
+currentRotate = [
+    startRotate[0] + localPercentage * (quarterRotate[0] - startRotate[0]),
+    startRotate[1] + localPercentage * (quarterRotate[1] - startRotate[1]),
+];
+} else if (currentScrollPercentage >= 0.25 && currentScrollPercentage < 0.5) {
+    const localPercentage = (currentScrollPercentage - 0.25) * 4;
+    currentScale = quarterScale + localPercentage * (midScale - quarterScale);
+    currentRotate = [
+        quarterRotate[0] + localPercentage * (midRotate[0] - quarterRotate[0]),
+        quarterRotate[1] + localPercentage * (midRotate[1] - quarterRotate[1]),
+    ];
+} else {
+    const localPercentage = (currentScrollPercentage - 0.5) * 2;
+    currentScale = midScale + localPercentage * (endScale - midScale);
+    currentRotate = [
+        midRotate[0] + localPercentage * (endRotate[0] - midRotate[0]),
+        midRotate[1] + localPercentage * (endRotate[1] - midRotate[1]),
+    ];
+}
 
-            projection
-                .scale(currentScale)
-                .rotate(currentRotate);
 
-            updateMap();
-        });
-    }
 
+
+    projection
+        .scale(currentScale)
+        .rotate(currentRotate);
+
+    updateMap();
     updateAudioVolumes(currentScrollPercentage);
 }
+
 
 
 window.addEventListener('scroll', updateMapOnScroll, { passive: true });
