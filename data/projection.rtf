@@ -63,8 +63,29 @@ clip to:\
 \fs32 \cf0 \cb1 \
 \pard\pardeftab720\qc\partightenfactor0
 \cf0 \
+\
+\'97\
+\
 \pard\pardeftab720\partightenfactor0
-\cf0 \
+\cf0   // Get the length of the path, which we will use for the intial offset to "hide"\
+  // the graph\
+  const length = path.node().getTotalLength();\
+  \
+  // This function will animate the path over and over again\
+  function repeat() \{\
+    // Animate the path by setting the initial offset and dasharray and then transition the offset to 0\
+    path.attr("stroke-dasharray", length + " " + length)\
+        .attr("stroke-dashoffset", length)\
+          .transition()\
+          .ease(d3.easeLinear)\
+          .attr("stroke-dashoffset", 0)\
+          .duration(6000)\
+          .on("end", () => setTimeout(repeat, 1000)); // this will repeat the animation after waiting 1 second\
+\
+  // Animate the graph for the first time\
+  repeat();\
+  \
+ return svg.node();\
 \pard\pardeftab720\qc\partightenfactor0
 \cf0 \
 \pard\pardeftab720\partightenfactor0

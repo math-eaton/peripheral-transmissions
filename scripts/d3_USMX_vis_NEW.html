@@ -62,6 +62,7 @@
             stroke-width: 1.5;
         }
         .line {
+            fill: none;
             stroke: palegreen;
             stroke-width: 3;
         }
@@ -145,7 +146,7 @@
         // Load the GeoJSON data
         Promise.all([
             d3.json("USMX_finalStationPoint.json"),
-            d3.json("USMX_finalStationLine.json"),
+            d3.json("USMX_finalStationLine_DISSOLVE.json"),
             d3.json("ne_50m_coastline.json"),
             d3.json("USMX_10_20_40_buffers.json"),
         ]).then(([points, lines, coastline, buffers]) => {
@@ -175,14 +176,32 @@
                 .attr("class", "coast");
             
             // Draw the lines
-            svg.append("g")
+            const lineGroup = svg.append("g")
                 .selectAll("path")
                 .data(lines.features)
                 .enter()
                 .append("path")
                 .attr("d", path)
                 .attr("class", "line");
-    
+
+            // Animate the lines
+            lineGroup.each(function (d, i) {
+                const path = d3.select(this);
+                const length = path.node().getTotalLength();
+
+                function repeat() {
+                    path.attr("stroke-dasharray", length + " " + length)
+                        .attr("stroke-dashoffset", length)
+                        .transition()
+                        .ease(d3.easeLinear)
+                        .attr("stroke-dashoffset", 0)
+                        .duration(60000)
+                        .on("end", () => setTimeout(repeat, 10000));
+                }
+
+                repeat();
+            });
+
             // Draw the points
             svg.append("g")
                 .selectAll("circle")
@@ -226,7 +245,7 @@
             if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
                 lastScrollPercentage = scrollPercentage;
 
-            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
 
 
                 // Define the start, midpoint, and end projection parameters
