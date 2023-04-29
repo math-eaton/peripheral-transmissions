@@ -67,9 +67,14 @@
             stroke-width: 3;
         }
         .coast{
-            fill: rgb(30, 0, 255);
+            fill: none;
             stroke:black;
-            stroke-width: .666;
+            stroke-width: 1.2;
+        }
+        .marine{
+            fill:rgb(30, 0, 255);
+            stroke-width: 2;
+            stroke:black;
         }
         .buffer{
             stroke:aqua;
@@ -148,24 +153,40 @@
             d3.json("USMX_finalStationPoint.json"),
             d3.json("USMX_finalStationLine_DISSOLVE.json"),
             d3.json("ne_50m_coastline.json"),
+            // d3.json("ne_10m_geography_marine_polys.json"),
             d3.json("USMX_10_20_40_buffers.json"),
         ]).then(([points, lines, coastline, buffers]) => {
-            // Calculate the bounding box of the lines
+
+            // Calculate the bounding box of the line features
             const linesBoundingBox = turf.bbox(lines);
 
-            // Expand the bounding box by 5 degrees in each direction
+            // Expand the bounding box in degrees in each direction
             const expandedBoundingBox = [
-                linesBoundingBox[0] - 7, // min longitude
+                linesBoundingBox[0] - 1, // min longitude
                 linesBoundingBox[1] - 7, // min latitude
                 linesBoundingBox[2] + 7, // max longitude
                 linesBoundingBox[3] + 7, // max latitude
             ];
 
-            // Clip the coastline and graticule features
+            // Clip the coastline features
             coastline.features = coastline.features
                 .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
                 .filter(feature => feature !== null);
+
+            // Clip the marine features
+            // marine.features = marine.features
+            //     .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
+            //     .filter(feature => feature !== null);
             
+            // Draw the marine poly
+            // svg.append("g")
+            //     .selectAll("path")
+            //     .data(marine.features)
+            //     .enter()
+            //     .append("path")
+            //     .attr("d", path)
+            //     .attr("class", "marine");
+
             // Draw the coastline
             svg.append("g")
                 .selectAll("path")
@@ -184,23 +205,14 @@
                 .attr("d", path)
                 .attr("class", "line");
 
-            // // Animate the lines
-            // lineGroup.each(function (d, i) {
-            //     const path = d3.select(this);
-            //     const length = path.node().getTotalLength();
+            // Hide the lines initially
+            lineGroup.each(function (d, i) {
+                const path = d3.select(this);
+                const length = path.node().getTotalLength();
 
-            //     function repeat() {
-            //         path.attr("stroke-dasharray", length + " " + length)
-            //             .attr("stroke-dashoffset", length)
-            //             .transition()
-            //             .ease(d3.easeLinear)
-            //             .attr("stroke-dashoffset", 0)
-            //             .duration(60000)
-            //             .on("end", () => setTimeout(repeat, 10000));
-            //     }
-
-            //     repeat();
-            // });
+                path.attr("stroke-dasharray", length + " " + length)
+                    .attr("stroke-dashoffset", length);
+            });
 
             // Draw the points
             svg.append("g")
@@ -237,41 +249,60 @@
                 .style("stroke", "aqua")
                 .style("stroke-width", ".25");
 
+
         let lastScrollPercentage = 0;
 
-        function updateMapOnScroll() {
+        let scrollingDown = true;
 
-            const scrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+function updateMapOnScroll() {
+    const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
-            if (Math.abs(scrollPercentage - lastScrollPercentage) > 0.001) {
-                lastScrollPercentage = scrollPercentage;
+    // Check if the user is scrolling up or down
+    const isScrollingDown = currentScrollPercentage > lastScrollPercentage;
 
-                requestAnimationFrame(() => {
+    // Reveal more of the line as the user scrolls
+    lineGroup.each(function (d, i) {
+        const path = d3.select(this);
+        const length = path.node().getTotalLength();
 
-                // Define the start, midpoint, and end projection parameters
-                const startScale = 20000;
-                const midScale = 10000;
-                const endScale = 4000;
-    
-                const startRotate = [116.4, -34.6, roll];
-                const midRotate = [110, -34, roll*2]; 
-                const endRotate = [98, -34.5, roll*4];
-    
-                let currentScale, currentRotate;
-    
-                if (scrollPercentage < 0.5) {
-                    const localPercentage = scrollPercentage * 2;
-                    currentScale = startScale + localPercentage * (midScale - startScale);
-                    currentRotate = [
-                        startRotate[0] + localPercentage * (midRotate[0] - startRotate[0]),
-                        startRotate[1] + localPercentage * (midRotate[1] - startRotate[1]),
-                    ];
-                } else {
-                    const localPercentage = (scrollPercentage - 0.5) * 2;
-                    currentScale = midScale + localPercentage * (endScale - midScale);
-                    currentRotate = [
-                        midRotate[0] + localPercentage * (endRotate[0] - midRotate[0]),
-                        midRotate[1] + localPercentage * (endRotate[1] - midRotate[1]),
+        const currentOffset = length * (1 - currentScrollPercentage);
+        path.attr("stroke-dasharray", length + " " + length)
+            .attr("stroke-dashoffset", currentOffset);
+    });
+
+    if (isScrollingDown && currentScrollPercentage < 0.25 && lastScrollPercentage < 0.75) {
+        lastScrollPercentage = currentScrollPercentage;
+        return;
+    }
+
+    if (Math.abs(currentScrollPercentage - lastScrollPercentage) > 0.001) {
+        lastScrollPercentage = currentScrollPercentage;
+
+        requestAnimationFrame(() => {
+            // Define the start, midpoint, and end projection parameters
+            const startScale = 20000;
+            const midScale = 10000;
+            const endScale = 4000;
+
+            const startRotate = [116.4, -34.6, roll];
+            const midRotate = [110, -34, roll * 2];
+            const endRotate = [98, -34.5, roll * 4];
+
+            let currentScale, currentRotate;
+
+            if (currentScrollPercentage < 0.5) {
+                const localPercentage = currentScrollPercentage * 2;
+                currentScale = startScale + localPercentage * (midScale - startScale);
+                currentRotate = [
+                    startRotate[0] + localPercentage * (midRotate[0] - startRotate[0]),
+                    startRotate[1] + localPercentage * (midRotate[1] - startRotate[1]),
+                ];
+            } else {
+                const localPercentage = (currentScrollPercentage - 0.5) * 2;
+                currentScale = midScale + localPercentage * (endScale - midScale);
+                currentRotate = [
+                    midRotate[0] + localPercentage * (endRotate[0] - midRotate[0]),
+                    midRotate[1] + localPercentage * (endRotate[1] - midRotate[1]),
                 ];
             }
 
@@ -280,44 +311,12 @@
                 .rotate(currentRotate);
 
             updateMap();
+        });
+    }
 
-            // Update the easing factor based on the scroll percentage
-            const easingFactor = 1 - scrollPercentage;
+    updateAudioVolumes(currentScrollPercentage);
+}
 
-            // Animate the lines
-            lineGroup.each(function (d, i) {
-                const path = d3.select(this);
-                const length = path.node().getTotalLength();
-
-                function repeat() {
-                    path.attr("stroke-dasharray", length + " " + length)
-                        .attr("stroke-dashoffset", length)
-                        .transition()
-                        .ease(d3.easeLinear)
-                        .attr("stroke-dashoffset", 0)
-                        .duration(6000 * easingFactor)
-                        .on("end", () => setTimeout(repeat, 1000 * easingFactor));
-                }
-
-                repeat();
-
-            });
-
-            
-                 });  
-                 
-            }
-
-        updateAudioVolumes(scrollPercentage);
- 
-        }
-//         function debounce(func, wait) {
-//             let timeout;
-//             return function (...args) {
-//                 clearTimeout(timeout);
-//                 timeout = setTimeout(() => func.apply(this, args), wait);
-//             };
-// }
 
 window.addEventListener('scroll', updateMapOnScroll, { passive: true });
 
