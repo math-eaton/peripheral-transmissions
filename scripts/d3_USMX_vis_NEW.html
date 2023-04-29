@@ -52,7 +52,7 @@
             width: 80vw;
         } */
         .coastline {
-            fill: none;
+            fill: pale;
             stroke: palegreen;
             stroke-width: 1;
         }
@@ -132,7 +132,16 @@
             audio2.volume = scrollPercentage;
         }
 
-    
+
+        function clipToBoundingBox(feature, boundingBox) {
+            const clipped = turf.bboxClip(feature, boundingBox);
+            if (clipped.geometry.type === 'GeometryCollection' && clipped.geometry.geometries.length === 0) {
+            return null;
+            }
+            return clipped;
+        }
+
+
         // Load the GeoJSON data
         Promise.all([
             d3.json("USMX_finalStationPoint.json"),
@@ -140,7 +149,22 @@
             d3.json("ne_50m_coastline.json"),
             d3.json("USMX_10_20_40_buffers.json"),
         ]).then(([points, lines, coastline, buffers]) => {
+            // Calculate the bounding box of the lines
+            const linesBoundingBox = turf.bbox(lines);
 
+            // Expand the bounding box by 5 degrees in each direction
+            const expandedBoundingBox = [
+                linesBoundingBox[0] - 7, // min longitude
+                linesBoundingBox[1] - 7, // min latitude
+                linesBoundingBox[2] + 7, // max longitude
+                linesBoundingBox[3] + 7, // max latitude
+            ];
+
+            // Clip the coastline and graticule features
+            coastline.features = coastline.features
+                .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
+                .filter(feature => feature !== null);
+            
             // Draw the coastline
             svg.append("g")
                 .selectAll("path")
@@ -149,7 +173,7 @@
                 .append("path")
                 .attr("d", path)
                 .attr("class", "coast");
-    
+            
             // Draw the lines
             svg.append("g")
                 .selectAll("path")
@@ -245,7 +269,6 @@
         updateAudioVolumes(scrollPercentage);
  
         }
-        
         function debounce(func, wait) {
             let timeout;
             return function (...args) {
