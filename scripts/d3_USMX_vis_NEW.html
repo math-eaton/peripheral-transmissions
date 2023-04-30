@@ -122,7 +122,7 @@
         // Define the initial map projection
         const projection = d3.geoTransverseMercator()
             .translate([width / 1.8, height / 2])
-            .scale(20000)
+            .scale(18000)
             .rotate([116.4, -34.6]);
     
         // Define the path generator
@@ -249,26 +249,49 @@
                 .attr("d", path)
                 .attr("class", "buffer");
 
+const linePath = d3.geoPath();
+
 
 function updateMapOnScroll() {
-    const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+  const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
-    // Reveal more of the line as the user scrolls
-    lineGroup.each(function (d, i) {
-        const path = d3.select(this);
-        const length = path.node().getTotalLength();
+  // Reveal more of the line as the user scrolls
+  let visibleLinePoints = [];
+  lineGroup.each(function (d, i) {
+    const path = d3.select(this);
+    const length = path.node().getTotalLength();
 
-        const currentOffset = length * (1 - currentScrollPercentage);
-        path.attr("stroke-dasharray", length + " " + length)
-            .attr("stroke-dashoffset", currentOffset);
-    });
+    const currentOffset = length * (1 - currentScrollPercentage);
+    path.attr("stroke-dasharray", length + " " + length)
+      .attr("stroke-dashoffset", currentOffset);
+
+    const visibleLineLength = length - currentOffset;
+    if (visibleLineLength > 0) {
+      const startPoint = path.node().getPointAtLength(currentOffset);
+      const endPoint = path.node().getPointAtLength(length);
+      visibleLinePoints.push([startPoint.x, startPoint.y], [endPoint.x, endPoint.y]);
+    }
+  });
+
+  // Calculate the centroid of the visible line segment
+  if (visibleLinePoints.length > 0) {
+    const visibleLine = turf.lineString(visibleLinePoints);
+    const centroid = turf.centroid(visibleLine);
+    const latLng = projection.invert(centroid.geometry.coordinates);
+    const latitude = latLng[1];
+    const longitude = latLng[0];
+
+    console.log('Latitude:', latitude, 'Longitude:', longitude);
+
+}
+
 
     if (currentScrollPercentage < 0.15) {
         return;
     }
 
     // Define the start, quarter, midpoint, and end projection parameters
-    const startScale = 20000;
+    const startScale = 18000;
     const quarterScale = startScale;
     const midScale = 12500;
     const endScale = 7000;
@@ -338,7 +361,7 @@ window.addEventListener('scroll', updateMapOnScroll, { passive: true });
         audio1.play();
         audio2.play();
 
-        })});
+    })});
     </script>
 </body>
 </html>
