@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoJSON Visualization</title>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/d3-geo.v2.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
     <script src="https://unpkg.com/topojson@3.0.2/dist/topojson.min.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script src="//unpkg.com/d3-geo-zoom"></script>
+    <script src="https://d3js.org/d3-geo-format.v2.min.js"></script>
         <style>
             body {
             margin: 0;
@@ -27,7 +28,7 @@
             pointer-events: none; /* Ignore mouse interactions with the SVG */
         }
         .scroll-container {
-            height: 7200px;
+            height: 15000px;
             position: relative;
         }
          /* body {
@@ -81,6 +82,12 @@
             stroke-width:.25;
             fill: none;
         }
+        .graticule{
+            stroke: aqua;
+            stroke-width: .3;
+            stroke-dasharray: 8 2 4;
+            fill: none;
+        }
         /* .animated-dot {
             fill: blue;
             stroke: black;
@@ -89,7 +96,7 @@
     </style>
 </head>
 <body>
-    <div style="height: 7200px; position: relative;">
+    <div style="height: 15000px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0;"></svg>
     </div>
     <audio id="audio-1" loop>
@@ -153,7 +160,8 @@
             d3.json("ne_50m_coastline.json"),
             // d3.json("ne_10m_geography_marine_polys.json"),
             d3.json("USMX_10_20_40_buffers.json"),
-        ]).then(([points, lines, coastline, buffers]) => {
+            d3.json("ne_110m_graticules_10.json")
+        ]).then(([points, lines, coastline, buffers, graticule]) => {
 
             // Calculate the bounding box of the line features
             const linesBoundingBox = turf.bbox(lines);
@@ -171,10 +179,10 @@
                 .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
                 .filter(feature => feature !== null);
 
-            // Clip the marine features
-            // marine.features = marine.features
-            //     .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
-            //     .filter(feature => feature !== null);
+            // Clip the graticule features
+            graticule.features = graticule.features
+                .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
+                .filter(feature => feature !== null);
             
             // Draw the marine poly
             // svg.append("g")
@@ -193,8 +201,17 @@
                 .append("path")
                 .attr("d", path)
                 .attr("class", "coast");
+
+            // Draw the graticule
+            svg.append("g")
+                .selectAll("path")
+                .data(graticule.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", "graticule");
             
-            // Draw the lines
+            // Draw the radio lines
             const lineGroup = svg.append("g")
                 .selectAll("path")
                 .data(lines.features)
@@ -232,22 +249,6 @@
                 .attr("d", path)
                 .attr("class", "buffer");
 
-            // Define the graticule
-            const graticule = d3.geoGraticule10();
-
-            // Add the graticule
-            svg.append("path")
-                .datum(graticule)
-                .attr("d", path)
-                .attr("class", "graticule");
-                
-            // Style the graticule
-            svg.selectAll(".graticule")
-                .style("fill", "none")
-                .style("stroke", "aqua")
-                .style("stroke-width", ".25");
-
-
 
 function updateMapOnScroll() {
     const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
@@ -269,13 +270,13 @@ function updateMapOnScroll() {
     // Define the start, quarter, midpoint, and end projection parameters
     const startScale = 20000;
     const quarterScale = startScale;
-    const midScale = 15000;
-    const endScale = 4000;
+    const midScale = 12500;
+    const endScale = 7000;
 
     const startRotate = [116.4, -34.6];
     const quarterRotate = startRotate;
-    const midRotate = [109, -34.6];
-    const endRotate = [98, -34.6];
+    const midRotate = [109, -33.6];
+    const endRotate = [98, -32.3];
 
     let currentScale, currentRotate;
     console.log(currentScrollPercentage)
@@ -309,7 +310,6 @@ function updateMapOnScroll() {
         halfRotate[1] + localPercentage * (endRotate[1] - halfRotate[1]),
     ];
 }
-
 
 
     projection
