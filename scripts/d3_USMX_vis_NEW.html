@@ -19,6 +19,12 @@
         }
         h2 {
             position: fixed;
+            bottom: 1vw;
+            font-family: monospace;
+            color:aqua;
+            opacity: 40%;
+            /* transform: rotate(-90deg); */
+            margin-left: 1vw;
         }
         svg {
             display: block;
@@ -73,7 +79,7 @@
     </style>
 </head>
 <body>
-    <h2 id="latlong-display">Latitude: 25.8769, Longitude: -97.5159</h2>
+    <h2 id="latlong-display">25.8769, -97.5159</h2>
     <div style="height: 15000px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0;"></svg>
     </div>
@@ -261,7 +267,7 @@ function updateMapOnScroll() {
 
     // Update the h2 element with the latitude and longitude
     const coordinatesDisplay = document.getElementById("latlong-display");
-    coordinatesDisplay.textContent = `Latitude: ${latitude.toFixed(4)}, Longitude: ${longitude.toFixed(4)}`;
+    coordinatesDisplay.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
   
 
 }
