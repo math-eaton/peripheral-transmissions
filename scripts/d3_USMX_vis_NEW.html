@@ -12,10 +12,13 @@
     <script src="//unpkg.com/d3-geo-zoom"></script>
     <script src="https://d3js.org/d3-geo-format.v2.min.js"></script>
         <style>
-            body {
-            margin: 0;
-            background: rgb(25, 0, 255);
-            overflow-x: hidden; /* Hide horizontal scrollbar */
+        body {
+        margin: 0;
+        background: rgb(25, 0, 255);
+        overflow-x: hidden; /* Hide horizontal scrollbar */
+        }
+        h2 {
+            position: fixed;
         }
         svg {
             display: block;
@@ -31,27 +34,6 @@
             height: 15000px;
             position: relative;
         }
-         /* body {
-            margin: 0;
-            background: rgb(25, 0, 255);
-        }
-        svg {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        } */
-        /* body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: blue;
-        }
-        svg {
-            display: block;
-            width: 80vw;
-        } */
         .coastline {
             fill: pale;
             stroke: palegreen;
@@ -88,14 +70,10 @@
             stroke-dasharray: 8 2 4;
             fill: none;
         }
-        /* .animated-dot {
-            fill: blue;
-            stroke: black;
-            stroke-width: 1;
-        } */
     </style>
 </head>
 <body>
+    <h2 id="latlong-display">Latitude: 25.8769, Longitude: -97.5159</h2>
     <div style="height: 15000px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0;"></svg>
     </div>
@@ -281,7 +259,10 @@ function updateMapOnScroll() {
     const latitude = latLng[1];
     const longitude = latLng[0];
 
-    console.log('Latitude:', latitude, 'Longitude:', longitude);
+    // Update the h2 element with the latitude and longitude
+    const coordinatesDisplay = document.getElementById("latlong-display");
+    coordinatesDisplay.textContent = `Latitude: ${latitude.toFixed(4)}, Longitude: ${longitude.toFixed(4)}`;
+  
 
 }
 
@@ -343,9 +324,22 @@ function updateMapOnScroll() {
     updateAudioVolumes(currentScrollPercentage);
 }
 
+//   // Set the initial latitude and longitude values
+//   function setInitialLatLong() {
+//     // Get the current center of the map
+//     var center = projection.invert([width / 2, height / 2]);
 
+//     // Get the latitude and longitude
+//     var latitude = center[1].toFixed(2);
+//     var longitude = center[0].toFixed(2);
 
-window.addEventListener('scroll', updateMapOnScroll, { passive: true });
+//     // Set the text of the H2 element
+//     document.getElementsById("latlong-display").innerText = "Latitude: " + latitude + ", Longitude: " + longitude;
+//   }
+
+  // Attach the function to the scroll event
+  window.addEventListener('scroll', updateMapOnScroll, { passive: true });
+
 
     function updateAudioVolumes(scrollPercentage) {
     const audio1 = document.getElementById("audio-1");
@@ -361,7 +355,10 @@ window.addEventListener('scroll', updateMapOnScroll, { passive: true });
         audio1.play();
         audio2.play();
 
+
+
     })});
+
     </script>
 </body>
 </html>
