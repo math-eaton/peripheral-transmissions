@@ -106,7 +106,7 @@
         // Define the initial map projection
         const projection = d3.geoTransverseMercator()
             .translate([width / 1.8, height / 2])
-            .scale(18000)
+            .scale(15000)
             .rotate([116.4, -34.6]);
     
         // Define the path generator
@@ -236,99 +236,63 @@
 const linePath = d3.geoPath();
 
 
+// Store the initial latitude
+let initialLatitude;
+if (!initialLatitude) {
+  const initialCenter = projection.invert([width / 1.8, height / 2.5]);
+  initialLatitude = initialCenter[1];
+}
+
 function updateMapOnScroll() {
-  const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+    const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
-  // Reveal more of the line as the user scrolls
-  let visibleLinePoints = [];
-  lineGroup.each(function (d, i) {
-    const path = d3.select(this);
-    const length = path.node().getTotalLength();
+    // Reveal more of the line as the user scrolls
+    let visibleLinePoints = [];
+    lineGroup.each(function (d, i) {
+        const path = d3.select(this);
+        const length = path.node().getTotalLength();
 
-    const currentOffset = length * (1 - currentScrollPercentage);
-    path.attr("stroke-dasharray", length + " " + length)
-      .attr("stroke-dashoffset", currentOffset);
+        const currentOffset = length * currentScrollPercentage;
+        path.attr("stroke-dasharray", length + " " + length)
+            .attr("stroke-dashoffset", length - currentOffset);
 
-    const visibleLineLength = length - currentOffset;
-    if (visibleLineLength > 0) {
-      const startPoint = path.node().getPointAtLength(currentOffset);
-      const endPoint = path.node().getPointAtLength(length);
-      visibleLinePoints.push([startPoint.x, startPoint.y], [endPoint.x, endPoint.y]);
+        const visibleLineLength = length - currentOffset;
+        if (visibleLineLength > 0) {
+            const startPoint = path.node().getPointAtLength(0);
+            const endPoint = path.node().getPointAtLength(currentOffset);
+            visibleLinePoints.push([startPoint.x, startPoint.y], [endPoint.x, endPoint.y]);
+        }
+    });
+
+    // Calculate the bounding box and center of the visible line segment
+    if (visibleLinePoints.length > 0) {
+        const visibleLine = turf.lineString(visibleLinePoints);
+        const bbox = turf.bbox(visibleLine);
+        const bboxPolygon = turf.bboxPolygon(bbox);
+        const center = turf.center(bboxPolygon);
+        const latLng = projection.invert(center.geometry.coordinates);
+        const latitude = initialLatitude;
+        const longitude = latLng[0];
+
+        // Update the h2 element with the latitude and longitude
+        const coordinatesDisplay = document.getElementById("latlong-display");
+        coordinatesDisplay.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+        // Update the map projection to center only on the longitude value
+        projection
+            .rotate([-longitude, -latitude]);
+
+        // Redraw the map with the updated projection
+        updateMap();
     }
-  });
 
-  // Calculate the centroid of the visible line segment
-  if (visibleLinePoints.length > 0) {
-    const visibleLine = turf.lineString(visibleLinePoints);
-    const centroid = turf.centroid(visibleLine);
-    const latLng = projection.invert(centroid.geometry.coordinates);
-    const latitude = latLng[1];
-    const longitude = latLng[0];
-
-    // Update the h2 element with the latitude and longitude
-    const coordinatesDisplay = document.getElementById("latlong-display");
-    coordinatesDisplay.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-  
-
-}
-
-
-    if (currentScrollPercentage < 0.15) {
-        return;
-    }
-
-    // Define the start, quarter, midpoint, and end projection parameters
-    const startScale = 18000;
-    const quarterScale = startScale;
-    const midScale = 12500;
-    const endScale = 7000;
-
-    const startRotate = [116.4, -34.6];
-    const quarterRotate = startRotate;
-    const midRotate = [109, -33.6];
-    const endRotate = [98, -32.3];
-
-    let currentScale, currentRotate;
-    console.log(currentScrollPercentage)
-
-
-    if (currentScrollPercentage < 0.15) {
-    const localPercentage = currentScrollPercentage * (1 / 0.15);
-    currentScale = startScale + localPercentage * (quarterScale - startScale);
-    currentRotate = [
-        startRotate[0] + localPercentage * (quarterRotate[0] - startRotate[0]),
-        startRotate[1] + localPercentage * (quarterRotate[1] - startRotate[1]),
-    ];
-    } else if (currentScrollPercentage >= 0.15 && currentScrollPercentage < 0.4) {
-    const localPercentage = (currentScrollPercentage - 0.15) * (1 / 0.25);
-    currentScale = quarterScale + localPercentage * (midScale - quarterScale);
-    currentRotate = [
-        quarterRotate[0] + localPercentage * (midRotate[0] - quarterRotate[0]),
-        quarterRotate[1] + localPercentage * (midRotate[1] - quarterRotate[1]),
-    ];
-    } else {
-    const localPercentage = (currentScrollPercentage - 0.4) * 2;
-    const halfRotate = [
-        quarterRotate[0] + (0.25 * (1 / 0.25)) * (midRotate[0] - quarterRotate[0]),
-        quarterRotate[1] + (0.25 * (1 / 0.25)) * (midRotate[1] - quarterRotate[1]),
-    ];
-    const halfScale = quarterScale + (0.25 * (1 / 0.25)) * (midScale - quarterScale);
-
-    currentScale = halfScale + localPercentage * (endScale - halfScale);
-    currentRotate = [
-        halfRotate[0] + localPercentage * (endRotate[0] - halfRotate[0]),
-        halfRotate[1] + localPercentage * (endRotate[1] - halfRotate[1]),
-    ];
-}
-
-
-    projection
-        .scale(currentScale)
-        .rotate(currentRotate);
-
-    updateMap();
+    // Update the audio volumes based on the scroll percentage
     updateAudioVolumes(currentScrollPercentage);
 }
+
+
+
+
 
 //   // Set the initial latitude and longitude values
 //   function setInitialLatLong() {
