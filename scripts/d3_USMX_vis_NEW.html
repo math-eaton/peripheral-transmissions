@@ -95,32 +95,218 @@
         <source src="audio-file-2.mp3" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>  
-    <script>
-        // Width and height of the SVG
-        const width = 800;
-        const height = 600;
-    
-        // Create the SVG
-        const svg = d3.select("body")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-    
-        // Define the initial map projection
-        const projection = d3.geoTransverseMercator()
-            .translate([width / 2, height / 2])
-            .scale(20000)
-            .rotate([116.4, -35.1]);
-    
-        // Define the path generator
-        const path = d3.geoPath().projection(projection);
-    
-        function updateMap() {
-            svg.selectAll("path").attr("d", path);
-            svg.selectAll(".point")
-                .attr("cx", d => projection(d.geometry.coordinates)[0])
-                .attr("cy", d => projection(d.geometry.coordinates)[1]);
+<script>
+    // Width and height of the SVG
+    const width = 800;
+    const height = 600;
+
+    // Create the SVG
+    const svg = d3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    // Define the initial map projection
+    const projection = d3.geoTransverseMercator()
+        .translate([width / 2, height / 2])
+        .scale(20000)
+        .rotate([116.4, -35.1]);
+
+    // Define the path generator
+    const path = d3.geoPath().projection(projection);
+
+    function updateMap() {
+        svg.selectAll("path").attr("d", path);
+        svg.selectAll(".point")
+            .attr("cx", d => projection(d.geometry.coordinates)[0])
+            .attr("cy", d => projection(d.geometry.coordinates)[1]);
+    }
+
+    function updateAudioVolumes(scrollPercentage) {
+        const audio1 = document.getElementById("audio-1");
+        const audio2 = document.getElementById("audio-2");
+
+        audio1.volume = 1 - scrollPercentage;
+        audio2.volume = scrollPercentage;
+    }
+
+
+    function clipToBoundingBox(feature, boundingBox) {
+        const clipped = turf.bboxClip(feature, boundingBox);
+        if (clipped.geometry.type === 'GeometryCollection' && clipped.geometry.geometries.length === 0) {
+            return null;
         }
+        return clipped;
+    }
+
+
+    // Load the GeoJSON data
+    Promise.all([
+        d3.json("USMX_finalStationPoint.json"),
+        d3.json("USMX_finalStationLine_DISSOLVE.json"),
+        d3.json("ne_50m_coastline.json"),
+        d3.json("USMX_10_20_40_buffers.json"),
+        d3.json("ne_110m_graticules_10.json")
+    ]).then(([points, lines, coastline, buffers, graticule]) => {
+
+        // Calculate the bounding box of the line features
+        const linesBoundingBox = turf.bbox(lines);
+
+        // Expand the bounding box in degrees in each direction
+        const expandedBoundingBox = [
+            linesBoundingBox[0] - 1, // min longitude
+            linesBoundingBox[1] - 7, // min latitude
+            linesBoundingBox[2] + 7, // max longitude
+            linesBoundingBox[3] + 7, // max latitude
+        ];
+
+        // Clip the coastline features
+        coastline.features = coastline.features
+            .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
+            .filter(feature => feature !== null);
+
+        // Clip the graticule features
+        graticule.features = graticule.features
+            .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
+            .filter(feature => feature !== null);
+
+        // Draw the marine poly
+        // svg.append("g")
+        //     .selectAll("path")
+        //     .data(marine.features)
+        //     .enter()
+        //     .append("path")
+        //     .attr("d", path)
+        //     .attr("class", "marine");
+
+        // Draw the coastline
+        svg.append("g")
+            .selectAll("path")
+            .data(coastline.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "coast");
+
+        // Draw the graticule
+        svg.append("g")
+            .selectAll("path")
+            .data(graticule.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "graticule");
+
+        // Draw the radio lines
+        const lineGroup = svg.append("g")
+            .selectAll("path")
+            .data(lines.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "line");
+
+        // Hide the lines initially
+        lineGroup.each(function(d, i) {
+            const path = d3.select(this);
+            const length = path.node().getTotalLength();
+
+            path.attr("stroke-dasharray", length + " " + length)
+                .attr("stroke-dashoffset", length);
+        });
+
+        // Draw the points
+        svg.append("g")
+            .selectAll("circle")
+            .data(points.features)
+            .enter()
+            .append("circle")
+            .attr("class", "point")
+            .attr("cx", d => projection(d.geometry.coordinates)[0])
+            .attr("cy", d => projection(d.geometry.coordinates)[1])
+            .attr("r", 6);
+
+        // Draw the buffers
+        svg.append("g")
+            .selectAll("path")
+            .data(buffers.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "buffer");
+
+
+        // Define the total scroll height based on the number of line segments
+        const totalLineLength = lines.features.reduce((total, feature) => {
+            return total + turf.length(feature);
+        }, 0);
+
+        // Set the scroll height based on the total line length
+        const scrollHeight = totalLineLength * 25;
+        document.querySelector('.scroll-container').style.height = `${scrollHeight}px`;
+
+        const linePath = d3.geoPath();
+
+
+        // Store the initial latitude
+        let initialLatitude;
+        if (!initialLatitude) {
+            const initialCenter = projection.invert([width / 2, height / 2]);
+            initialLatitude = initialCenter[1];
+        }
+
+        function updateMapOnScroll() {
+            const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+
+            // Reveal more of the line as the user scrolls
+            let visibleLinePoints = [];
+            lineGroup.each(function(d, i) {
+                const path = d3.select(this);
+                const length = path.node().getTotalLength();
+
+                const currentOffset = length * currentScrollPercentage;
+                path.attr("stroke-dasharray", length + " " + length)
+                    .attr("stroke-dashoffset", length - currentOffset);
+
+                const visibleLineLength = length - currentOffset;
+                if (visibleLineLength > 0) {
+                    const startPoint = path.node().getPointAtLength(0);
+                    const endPoint = path.node().getPointAtLength(currentOffset);
+                    visibleLinePoints.push([startPoint.x, startPoint.y], [endPoint.x, endPoint.y]);
+                }
+            });
+
+            // Calculate the bounding box and center of the visible line segment
+            if (visibleLinePoints.length > 0) {
+                const visibleLine = turf.lineString(visibleLinePoints);
+                const bbox = turf.bbox(visibleLine);
+                const bboxPolygon = turf.bboxPolygon(bbox);
+                const center = turf.center(bboxPolygon);
+                const latLng = projection.invert(center.geometry.coordinates);
+                const latitude = latLng[1];
+                const longitude = latLng[0];
+
+                // Update the h2 element with the latitude and longitude
+                const coordinatesDisplay = document.getElementById("latlong-display");
+                coordinatesDisplay.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+                // Update the map projection to center on the new latitude and longitude values
+                projection
+                    .rotate([-longitude, -initialLatitude]);
+
+                // Redraw the map with the updated projection
+                updateMap();
+            }
+
+            // Update the audio volumes based on the scroll percentage
+            updateAudioVolumes(currentScrollPercentage);
+        }
+
+        // Attach the function to the scroll event
+        window.addEventListener('scroll', updateMapOnScroll, {
+            passive: true
+        });
+
 
         function updateAudioVolumes(scrollPercentage) {
             const audio1 = document.getElementById("audio-1");
@@ -130,219 +316,16 @@
             audio2.volume = scrollPercentage;
         }
 
-
-        function clipToBoundingBox(feature, boundingBox) {
-            const clipped = turf.bboxClip(feature, boundingBox);
-            if (clipped.geometry.type === 'GeometryCollection' && clipped.geometry.geometries.length === 0) {
-            return null;
-            }
-            return clipped;
-        }
+        document.addEventListener("DOMContentLoaded", function() {
+            const audio1 = document.getElementById("audio-1");
+            const audio2 = document.getElementById("audio-2");
+            audio1.play();
+            audio2.play();
 
 
-        // Load the GeoJSON data
-        Promise.all([
-            d3.json("USMX_finalStationPoint.json"),
-            d3.json("USMX_finalStationLine_DISSOLVE.json"),
-            d3.json("ne_50m_coastline.json"),
-            d3.json("USMX_10_20_40_buffers.json"),
-            d3.json("ne_110m_graticules_10.json")
-        ]).then(([points, lines, coastline, buffers, graticule]) => {
 
-            // Calculate the bounding box of the line features
-            const linesBoundingBox = turf.bbox(lines);
-
-            // Expand the bounding box in degrees in each direction
-            const expandedBoundingBox = [
-                linesBoundingBox[0] - 1, // min longitude
-                linesBoundingBox[1] - 7, // min latitude
-                linesBoundingBox[2] + 7, // max longitude
-                linesBoundingBox[3] + 7, // max latitude
-            ];
-
-            // Clip the coastline features
-            coastline.features = coastline.features
-                .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
-                .filter(feature => feature !== null);
-
-            // Clip the graticule features
-            graticule.features = graticule.features
-                .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
-                .filter(feature => feature !== null);
-            
-            // Draw the marine poly
-            // svg.append("g")
-            //     .selectAll("path")
-            //     .data(marine.features)
-            //     .enter()
-            //     .append("path")
-            //     .attr("d", path)
-            //     .attr("class", "marine");
-
-            // Draw the coastline
-            svg.append("g")
-                .selectAll("path")
-                .data(coastline.features)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .attr("class", "coast");
-
-            // Draw the graticule
-            svg.append("g")
-                .selectAll("path")
-                .data(graticule.features)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .attr("class", "graticule");
-            
-            // Draw the radio lines
-            const lineGroup = svg.append("g")
-                .selectAll("path")
-                .data(lines.features)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .attr("class", "line");
-
-            // Hide the lines initially
-            lineGroup.each(function (d, i) {
-                const path = d3.select(this);
-                const length = path.node().getTotalLength();
-
-                path.attr("stroke-dasharray", length + " " + length)
-                    .attr("stroke-dashoffset", length);
-            });
-
-            // Draw the points
-            svg.append("g")
-                .selectAll("circle")
-                .data(points.features)
-                .enter()
-                .append("circle")
-                .attr("class", "point")
-                .attr("cx", d => projection(d.geometry.coordinates)[0])
-                .attr("cy", d => projection(d.geometry.coordinates)[1])
-                .attr("r", 6);
-
-            // Draw the buffers
-            svg.append("g")
-                .selectAll("path")
-                .data(buffers.features)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .attr("class", "buffer");
-
-
-            // Define the total scroll height based on the number of line segments
-            const totalLineLength = lines.features.reduce((total, feature) => {
-                return total + turf.length(feature);
-            }, 0);
-
-            // Set the scroll height based on the total line length
-            const scrollHeight = totalLineLength * 25;
-            document.querySelector('.scroll-container').style.height = `${scrollHeight}px`;
-                
-const linePath = d3.geoPath();
-
-
-// Store the initial latitude
-let initialLatitude;
-if (!initialLatitude) {
-  const initialCenter = projection.invert([width / 2, height / 2]);
-  initialLatitude = initialCenter[1];
-}
-
-function updateMapOnScroll() {
-    const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
-
-    // Reveal more of the line as the user scrolls
-    let visibleLinePoints = [];
-    lineGroup.each(function (d, i) {
-        const path = d3.select(this);
-        const length = path.node().getTotalLength();
-
-        const currentOffset = length * currentScrollPercentage;
-        path.attr("stroke-dasharray", length + " " + length)
-            .attr("stroke-dashoffset", length - currentOffset);
-
-        const visibleLineLength = length - currentOffset;
-        if (visibleLineLength > 0) {
-            const startPoint = path.node().getPointAtLength(0);
-            const endPoint = path.node().getPointAtLength(currentOffset);
-            visibleLinePoints.push([startPoint.x, startPoint.y], [endPoint.x, endPoint.y]);
-        }
+        })
     });
-
-    // Calculate the bounding box and center of the visible line segment
-    if (visibleLinePoints.length > 0) {
-        const visibleLine = turf.lineString(visibleLinePoints);
-        const bbox = turf.bbox(visibleLine);
-        const bboxPolygon = turf.bboxPolygon(bbox);
-        const center = turf.center(bboxPolygon);
-        const latLng = projection.invert(center.geometry.coordinates);
-        const latitude = latLng[1];
-        const longitude = latLng[0];
-
-        // Update the h2 element with the latitude and longitude
-        const coordinatesDisplay = document.getElementById("latlong-display");
-        coordinatesDisplay.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-
-        // Update the map projection to center on the new latitude and longitude values
-        projection
-            .rotate([-longitude, -initialLatitude]);
-
-        // Redraw the map with the updated projection
-        updateMap();
-    }
-
-    // Update the audio volumes based on the scroll percentage
-    updateAudioVolumes(currentScrollPercentage);
-}
-
-
-
-
-
-
-
-//   // Set the initial latitude and longitude values
-//   function setInitialLatLong() {
-//     // Get the current center of the map
-//     var center = projection.invert([width / 2, height / 2]);
-
-//     // Get the latitude and longitude
-//     var latitude = center[1].toFixed(2);
-//     var longitude = center[0].toFixed(2);
-
-//     // Set the text of the H2 element
-//     document.getElementsById("latlong-display").innerText = "Latitude: " + latitude + ", Longitude: " + longitude;
-//   }
-
-  // Attach the function to the scroll event
-  window.addEventListener('scroll', updateMapOnScroll, { passive: true });
-
-
-    function updateAudioVolumes(scrollPercentage) {
-    const audio1 = document.getElementById("audio-1");
-    const audio2 = document.getElementById("audio-2");
-
-    audio1.volume = 1 - scrollPercentage;
-    audio2.volume = scrollPercentage;
-}
-
-    document.addEventListener("DOMContentLoaded", function() {
-        const audio1 = document.getElementById("audio-1");
-        const audio2 = document.getElementById("audio-2");
-        audio1.play();
-        audio2.play();
-
-
-
-    })});
-
-    </script>
+</script>
 </body>
 </html>
