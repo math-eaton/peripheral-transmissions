@@ -283,7 +283,7 @@ function updateMapOnScroll() {
         const bboxPolygon = turf.bboxPolygon(bbox);
         const center = turf.center(bboxPolygon);
         const latLng = projection.invert(center.geometry.coordinates);
-        const latitude = initialLatitude;
+        const latitude = latLng[1];
         const longitude = latLng[0];
 
         // Update the h2 element with the latitude and longitude
@@ -292,7 +292,7 @@ function updateMapOnScroll() {
 
         // Update the map projection to center on the new latitude and longitude values
         projection
-            .rotate([-longitude, -latitude]);
+            .rotate([-longitude, -initialLatitude]);
 
         // Redraw the map with the updated projection
         updateMap();
