@@ -79,7 +79,7 @@
     </style>
 </head>
 <body>
-    <h2 id="latlong-display">25.8769, -97.5159</h2>
+    <h2 id="latlong-display">35.1, -116.4</h2>
     <div style="height: 15000px; position: relative;">
         <svg style="position: fixed; top: 0; left: 0;"></svg>
     </div>
@@ -283,7 +283,7 @@ function updateMapOnScroll() {
         const bboxPolygon = turf.bboxPolygon(bbox);
         const center = turf.center(bboxPolygon);
         const latLng = projection.invert(center.geometry.coordinates);
-        const latitude = latLng[1];
+        const latitude = initialLatitude;
         const longitude = latLng[0];
 
         // Update the h2 element with the latitude and longitude
