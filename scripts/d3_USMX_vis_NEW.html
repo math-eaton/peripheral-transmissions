@@ -14,7 +14,7 @@
         <style>
         body {
         margin: 0;
-        background: rgb(25, 0, 255);
+        background: rgb(55, 0, 245);
         overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         h2 {
@@ -39,11 +39,6 @@
         .scroll-container {
             position: relative;
         }
-        .coastline {
-            fill: pale;
-            stroke: palegreen;
-            stroke-width: 1;
-        }
         .point {
             fill: palegreen;
             stroke: rgb(30, 0, 255);
@@ -55,9 +50,12 @@
             stroke-width: 3;
         }
         .coast{
-            fill: none;
+            fill: rgb(55, 0, 255);
             stroke:black;
             stroke-width: 1.2;
+            /* outline: 10px;
+            outline-color: black;
+            outline-offset: 10%; */
         }
         .marine{
             fill:rgb(30, 0, 255);
@@ -153,7 +151,7 @@
         Promise.all([
             d3.json("USMX_finalStationPoint.json"),
             d3.json("USMX_finalStationLine_DISSOLVE.json"),
-            d3.json("ne_50m_coastline.json"),
+            d3.json("ne_50m_land.json"),
             d3.json("USMX_10_20_40_buffers.json"),
             d3.json("ne_110m_graticules_10.json")
         ]).then(([points, lines, coastline, buffers, graticule]) => {
@@ -164,9 +162,9 @@
             // Expand the bounding box in degrees in each direction
             const expandedBoundingBox = [
                 linesBoundingBox[0] - 1, // min longitude
-                linesBoundingBox[1] - 7, // min latitude
-                linesBoundingBox[2] + 7, // max longitude
-                linesBoundingBox[3] + 7, // max latitude
+                linesBoundingBox[1] - 3, // min latitude
+                linesBoundingBox[2] + 5, // max longitude
+                linesBoundingBox[3] + 3, // max latitude
             ];
 
             // Clip the coastline features
