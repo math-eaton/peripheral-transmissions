@@ -305,25 +305,34 @@
                 if (visibleLinePoints.length > 0) {
                     const visibleLine = turf.lineString(visibleLinePoints);
 
-                    // Find the endpoint of the visible line segment
-                    const endpoint = visibleLinePoints[visibleLinePoints.length - 1];
+                // Find the endpoint of the visible line segment
+                const endpoint = visibleLinePoints[visibleLinePoints.length - 1];
 
-                    // Convert the endpoint coordinates to latitude and longitude
-                    const endpointLatLng = projection.invert(endpoint);
-                    const endpointLatitude = endpointLatLng[1];
-                    const endpointLongitude = endpointLatLng[0];
+                // Convert the endpoint coordinates to latitude and longitude
+                const endpointLatLng = projection.invert(endpoint);
+                const endpointLatitude = endpointLatLng[1];
+                const endpointLongitude = endpointLatLng[0];
 
-                    // Calculate the initial scale based on the visible line points
-                    const initialScale = 15000; // Replace this with your desired scale
+                // Calculate the initial scale based on the visible line points
+                const initialScale = 15000; // Replace this with your desired scale
 
-                    // Update the map projection to center on the endpoint of the visible line segment
-                    projection
-                        .rotate([-endpointLongitude, -initialLatitude])
-                        .translate([(width * 0.1) / Math.cos((90 - endpointLatitude) * Math.PI / 180), height / 2])
-                        .scale(initialScale); // Set the scale to the initialScale constant
+                // Find the most northerly and most southerly latitude points in the points.features array
+                const latitudes = points.features.map(point => point.geometry.coordinates[1]);
+                const mostNortherlyLatitude = Math.max(...latitudes);
+                const mostSoutherlyLatitude = Math.min(...latitudes);
 
-                    // Redraw the map with the updated projection
-                    updateMap();
+                // Interpolate the latitude based on the scroll percentage
+                const interpolatedLatitude = (mostNortherlyLatitude + 2) - (mostNortherlyLatitude - (mostSoutherlyLatitude - 3)) * (currentScrollPercentage*.5);
+
+                // Update the map projection to center on the endpoint of the visible line segment
+                projection
+                    .rotate([-endpointLongitude, -interpolatedLatitude]) // Use the interpolatedLatitude value here
+                    .translate([(width * 0.1) / Math.cos((90 - endpointLatitude) * Math.PI / 180), height / 2])
+                    .scale(initialScale); // Set the scale to the initialScale constant
+
+                // Redraw the map with the updated projection
+                updateMap();
+
                 }
 
                 // Update the audio volumes based on the scroll percentage
