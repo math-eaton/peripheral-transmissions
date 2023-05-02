@@ -251,33 +251,34 @@
                 return total + turf.length(feature);
             }, 0);
 
+
             // Set the scroll height based on the total line length
             const scrollHeight = totalLineLength * 25;
             document.querySelector('.scroll-container').style.height = `${scrollHeight}px`;
 
-            const linePath = d3.geoPath();
+            // const linePath = d3.geoPath();
 
 
-            // Store the initial latitude
-            let initialLatitude;
-            if (!initialLatitude) {
-                const initialCenter = projection.invert([width / 2, height / 2]);
-                initialLatitude = initialCenter[1];
-            }
+            // // Store the initial latitude
+            // let initialLatitude;
+            // if (!initialLatitude) {
+            //     const initialCenter = projection.invert([width / 2, height / 2]);
+            //     initialLatitude = initialCenter[1];
+            // }
 
-            // Calculate the initial scale based on the visible line points
-            function calculateInitialScale(projection, bboxPolygon, width, height) {
-                const bounds = d3.geoBounds(bboxPolygon);
-                console.log(bounds)
-                const projectedBounds = bounds.map(coord => projection(coord));
-                const dx = projectedBounds[1][0] - projectedBounds[0][0];
-                const dy = projectedBounds[1][1] - projectedBounds[0][1];
-                const x = (projectedBounds[0][0] + projectedBounds[1][0]) / 2;
-                const y = (projectedBounds[0][1] + projectedBounds[1][1]) / 2;
-                const scale = Math.min(width / dx, height / dy);
+            // // Calculate the initial scale based on the visible line points
+            // function calculateInitialScale(projection, bboxPolygon, width, height) {
+            //     const bounds = d3.geoBounds(bboxPolygon);
+            //     console.log(projection)
+            //     const projectedBounds = bounds.map(coord => projection(coord));
+            //     const dx = projectedBounds[1][0] - projectedBounds[0][0];
+            //     const dy = projectedBounds[1][1] - projectedBounds[0][1];
+            //     const x = (projectedBounds[0][0] + projectedBounds[1][0]) / 2;
+            //     const y = (projectedBounds[0][1] + projectedBounds[1][1]) / 2;
+            //     const scale = Math.min(width / dx, height / dy);
 
-                return [scale, x, y];
-            }
+            //     return [scale, x, y];
+            // }
         
             function updateMapOnScroll() {
                 const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
@@ -298,27 +299,28 @@
                         const endPoint = path.node().getPointAtLength(currentOffset);
                         visibleLinePoints.push([startPoint.x, startPoint.y], [endPoint.x, endPoint.y]);
                     }
-
                 });
 
                 // Calculate the bounding box and center of the visible line segment
                 if (visibleLinePoints.length > 0) {
                     const visibleLine = turf.lineString(visibleLinePoints);
-                    const bbox = turf.bbox(visibleLine);
-                    const bboxPolygon = turf.bboxPolygon(bbox);
-                    const center = turf.center(bboxPolygon);
-                    const latLng = projection.invert(center.geometry.coordinates);
-                    const latitude = latLng[1];
-                    const longitude = latLng[0];
 
-                    // Update the h2 element with the latitude and longitude
-                    const coordinatesDisplay = document.getElementById("latlong-display");
-                    coordinatesDisplay.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    // Find the endpoint of the visible line segment
+                    const endpoint = visibleLinePoints[visibleLinePoints.length - 1];
 
-                    // Update the map projection to center on the new latitude and longitude values
+                    // Convert the endpoint coordinates to latitude and longitude
+                    const endpointLatLng = projection.invert(endpoint);
+                    const endpointLatitude = endpointLatLng[1];
+                    const endpointLongitude = endpointLatLng[0];
+
+                    // Calculate the initial scale based on the visible line points
+                    const initialScale = 15000; // Replace this with your desired scale
+
+                    // Update the map projection to center on the endpoint of the visible line segment
                     projection
-                        .rotate([-longitude, -initialLatitude])
-                        .translate([(width * 0.1) / Math.cos((90 - latitude) * Math.PI / 180), height / 2]); // Adjust translation for rotated SVG
+                        .rotate([-endpointLongitude, -initialLatitude])
+                        .translate([(width * 0.1) / Math.cos((90 - endpointLatitude) * Math.PI / 180), height / 2])
+                        .scale(initialScale); // Set the scale to the initialScale constant
 
                     // Redraw the map with the updated projection
                     updateMap();
@@ -327,6 +329,7 @@
                 // Update the audio volumes based on the scroll percentage
                 updateAudioVolumes(currentScrollPercentage);
             }
+
 
             // Attach the function to the scroll event
             window.addEventListener('scroll', updateMapOnScroll, {
