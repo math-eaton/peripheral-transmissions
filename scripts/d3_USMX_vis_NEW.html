@@ -38,11 +38,11 @@
             pointer-events: none; /* Ignore mouse interactions with the SVG */
         }
         .scroll-container {
-            position: relative;
+            /* position: relative; */
         }
         .point {
             fill: palegreen;
-            stroke: rgb(30, 0, 255);
+            stroke: rgb(55, 0, 255, 0.437);
             stroke-width: 1.5;
         }
         .line {
@@ -65,8 +65,8 @@
         }
         .buffer{
             stroke:aqua;
-            stroke-width:.25;
-            fill: none;
+            stroke-width:0;
+            fill: rgba(255, 0, 255, 0.15);
         }
         .graticule{
             stroke: aqua;
@@ -92,8 +92,8 @@
     </audio>  
     <script>
         // Width and height of the SVG
-        const width = 960;
-        const height = 500;
+        const width = 1280;
+        const height = 720;
 
         // Create the SVG
         const svg = d3.select("body")
@@ -153,7 +153,7 @@
             d3.json("USMX_finalStationPoint.json"),
             d3.json("USMX_finalStationLine_DISSOLVE.json"),
             d3.json("ne_50m_land.json"),
-            d3.json("USMX_10_20_40_buffers.json"),
+            d3.json("USMX_40_buffers.json"),
             d3.json("ne_110m_graticules_10.json")
         ]).then(([points, lines, coastline, buffers, graticule]) => {
 
@@ -162,10 +162,10 @@
 
             // Expand the bounding box in degrees in each direction
             const expandedBoundingBox = [
-                linesBoundingBox[0] - 1, // min longitude
-                linesBoundingBox[1] - 3, // min latitude
-                linesBoundingBox[2] + 5, // max longitude
-                linesBoundingBox[3] + 3, // max latitude
+                linesBoundingBox[0] - 7, // min longitude
+                linesBoundingBox[1] - 7, // min latitude
+                linesBoundingBox[2] + 7, // max longitude
+                linesBoundingBox[3] + 7, // max latitude
             ];
 
             // Clip the coastline features
@@ -205,6 +205,15 @@
                 .attr("d", path)
                 .attr("class", "graticule");
 
+            // Draw the buffers
+            svg.append("g")
+                .selectAll("path")
+                .data(buffers.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", "buffer");
+
             // Draw the radio lines
             const lineGroup = svg.append("g")
                 .selectAll("path")
@@ -233,15 +242,6 @@
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
                 .attr("r", 6);
-
-            // Draw the buffers
-            svg.append("g")
-                .selectAll("path")
-                .data(buffers.features)
-                .enter()
-                .append("path")
-                .attr("d", path)
-                .attr("class", "buffer");
 
 
             // Define the total scroll height based on the number of line segments
@@ -289,7 +289,7 @@
                 const endpointLongitude = endpointLatLng[0];
 
                 // Calculate the initial scale based on the visible line points
-                const initialScale = 10000;
+                const initialScale = 11000;
 
                 // Find the most northerly and most southerly latitude points in the points.features array
                 const latitudes = points.features.map(point => point.geometry.coordinates[1]);
