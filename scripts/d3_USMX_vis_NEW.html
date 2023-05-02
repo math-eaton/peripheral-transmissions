@@ -18,6 +18,7 @@
         overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         h2 {
+            display: block;
             position: fixed;
             bottom: 1vw;
             font-family: monospace;
@@ -50,7 +51,7 @@
             stroke-width: 3;
         }
         .coast{
-            fill: rgb(55, 0, 255);
+            fill: rgba(55, 0, 255, 0.437);
             stroke:black;
             stroke-width: 1;
             /* outline: 10px;
@@ -76,10 +77,10 @@
     </style>
 </head>
 <body>
-    <h2 id="latlong-display">35.1, -116.4</h2>
     <div class="scroll-container">
         <svg style="position: fixed; top: 0; left: 0;"></svg>
     </div>
+    <h2 id="latlong-display">35.1, -116.4</h2>
     <audio id="audio-1" loop>
         <source src="audio-file-1.mp3" type="audio/mpeg">
         Your browser does not support the audio element.
