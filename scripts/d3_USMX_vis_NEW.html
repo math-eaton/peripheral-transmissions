@@ -29,7 +29,7 @@
         svg {
             display: block;
             transform: rotate(90deg);
-            width: 110vw;
+            width: 100vw;
             height: 200vh;
             position: fixed;
             top: 0;
@@ -52,7 +52,7 @@
         .coast{
             fill: rgb(55, 0, 255);
             stroke:black;
-            stroke-width: 1.2;
+            stroke-width: 1;
             /* outline: 10px;
             outline-color: black;
             outline-offset: 10%; */
@@ -303,6 +303,10 @@
                     .rotate([-endpointLongitude, -interpolatedLatitude])
                     .translate([(width * 0.1) / Math.cos((90 - endpointLatitude) * Math.PI / 180), height / 2])
                     .scale(initialScale); // Set the scale to the initialScale constant
+
+                // Update the h2 element with the latitude and longitude
+                const coordinatesDisplay = document.getElementById("latlong-display");
+                coordinatesDisplay.textContent = `${endpointLatitude.toFixed(4)}, ${endpointLongitude.toFixed(4)}`;
 
                 // Redraw the map with the updated projection
                 updateMap();
