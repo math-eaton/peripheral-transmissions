@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoJSON Visualization</title>
+    <title>Peripheral Transmissions</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/d3-geo.v2.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
@@ -107,7 +107,6 @@
 
 
         const projection = d3.geoTransverseMercator()
-        .translate([width / 1.5, height / 2])
         .scale(15000)
         .rotate([initialLongitude, -initialLatitude]);
 
@@ -140,7 +139,7 @@
         }
 
         function updateProjectionCenter(center) {
-            const screenCenter = [width / 1.5, height / 2];
+            const screenCenter = [width, height];
             const centerInProjection = projection(center);
             const translate = projection.translate();
             const newTranslate = [
@@ -255,31 +254,8 @@
             // Set the scroll height based on the total line length
             const scrollHeight = totalLineLength * 25;
             document.querySelector('.scroll-container').style.height = `${scrollHeight}px`;
-
-            // const linePath = d3.geoPath();
-
-
-            // // Store the initial latitude
-            // let initialLatitude;
-            // if (!initialLatitude) {
-            //     const initialCenter = projection.invert([width / 2, height / 2]);
-            //     initialLatitude = initialCenter[1];
-            // }
-
-            // // Calculate the initial scale based on the visible line points
-            // function calculateInitialScale(projection, bboxPolygon, width, height) {
-            //     const bounds = d3.geoBounds(bboxPolygon);
-            //     console.log(projection)
-            //     const projectedBounds = bounds.map(coord => projection(coord));
-            //     const dx = projectedBounds[1][0] - projectedBounds[0][0];
-            //     const dy = projectedBounds[1][1] - projectedBounds[0][1];
-            //     const x = (projectedBounds[0][0] + projectedBounds[1][0]) / 2;
-            //     const y = (projectedBounds[0][1] + projectedBounds[1][1]) / 2;
-            //     const scale = Math.min(width / dx, height / dy);
-
-            //     return [scale, x, y];
-            // }
-        
+            
+            // Reproject the map when the user scrolls
             function updateMapOnScroll() {
                 const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
@@ -314,7 +290,7 @@
                 const endpointLongitude = endpointLatLng[0];
 
                 // Calculate the initial scale based on the visible line points
-                const initialScale = 15000; // Replace this with your desired scale
+                const initialScale = 10000;
 
                 // Find the most northerly and most southerly latitude points in the points.features array
                 const latitudes = points.features.map(point => point.geometry.coordinates[1]);
@@ -326,7 +302,7 @@
 
                 // Update the map projection to center on the endpoint of the visible line segment
                 projection
-                    .rotate([-endpointLongitude, -interpolatedLatitude]) // Use the interpolatedLatitude value here
+                    .rotate([-endpointLongitude, -interpolatedLatitude])
                     .translate([(width * 0.1) / Math.cos((90 - endpointLatitude) * Math.PI / 180), height / 2])
                     .scale(initialScale); // Set the scale to the initialScale constant
 
