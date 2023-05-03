@@ -11,9 +11,12 @@ import wavio
 def sanitize_filename(filename):
     return re.sub(r'[\\/:"*?<>|]+', '_', filename)
 
-async def process_url(url):
+def sanitize_filename(filename):
+    return re.sub(r'[\\/:"*?<>|]+', '_', filename)
+
+async def process_url(url, id):
     # Launch the browser
-    browser = await launch(headless=False)
+    browser = await launch(headless=False, args=['--disable-blink-features=AutomationControlled'])
 
     try:
         # Open the webpage
@@ -41,6 +44,7 @@ async def process_url(url):
 
         await page.goto(url)
 
+
         # Refresh the page by navigating to the same URL again
         # await page.goto(url)
 
@@ -57,7 +61,7 @@ async def process_url(url):
         await page.mouse.up()
 
         # Wait for a network request with a URL that ends with "channel.mp3"
-        await page.waitForRequest(lambda req: req.url.endswith("channel.mp3"))
+        # await page.waitForRequest(lambda req: req.url.endswith("channel.mp3"))
 
         # Wait 3 seconds
         await asyncio.sleep(5)
@@ -97,15 +101,19 @@ async def process_url(url):
 
 async def main():
     # Read the CSV file
-    with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/places_sample.csv', 'r') as f:
-        reader = csv.DictReader(f)
-        urls = [row['url'] for row in reader]
+    with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/places_sample.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            url = row['url']
+            id = row['id']
+            print(f"Processing URL: {url}")
+            await process_url(url, id)
 
     # Create the "audio" subfolder if it doesn't exist
     os.makedirs('audio', exist_ok=True)
 
-    # Process each URL
-    for url in urls:
-        await process_url(url)
+    # # Process each URL
+    # for url in urls:
+    #     await process_url(url)
 
 asyncio.run(main())
