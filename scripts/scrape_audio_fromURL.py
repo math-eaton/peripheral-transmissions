@@ -37,7 +37,7 @@ async def process_url(url):
         recording_duration = 5  # seconds
         recording_rate = 44100  # Hz
         recording_channels = 1  # Set number of channels to 1 (mono)
-        recording = sd.rec(int(recording_duration * recording_rate), samplerate=recording_rate, channels=recording_channels, dtype='int16')
+        recording = sd.rec(int(recording_duration * recording_rate), samplerate=recording_rate, channels=recording_channels, dtype='int16', device=6)
         sd.wait()
 
         # Save the audio output file with the name of its associated URL in the "audio" subfolder
