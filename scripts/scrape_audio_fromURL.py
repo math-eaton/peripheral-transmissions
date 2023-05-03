@@ -18,23 +18,52 @@ async def process_url(url):
     try:
         # Open the webpage
         page = await browser.newPage()
+
+        # Set the user agent to a common browser user agent
+        await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36")
+
+        # Set the viewport size
         await page.setViewport({'width': 800, 'height': 600})
+
+        # Set other options to make the browser appear more like a regular user's browser
+        await page.evaluateOnNewDocument('''() => {
+            delete navigator.__proto__.webdriver;
+            window.navigator.chrome = {
+                runtime: {},
+            };
+            const originalQuery = window.navigator.permissions.query;
+            return window.navigator.permissions.query = (parameters) => (
+                parameters.name === 'notifications' ?
+                    Promise.resolve({ state: Notification.permission }) :
+                    originalQuery(parameters)
+            );
+        }''')
+
         await page.goto(url)
 
+        # Refresh the page by navigating to the same URL again
+        # await page.goto(url)
+
         # Wait 3 seconds
-        await asyncio.sleep(5)
+        await asyncio.sleep(15)
+
+        # Scroll down the page slightly
+        await page.evaluate("window.scrollBy(0, 50)")
 
         # Click and drag in the center of the webpage
-        await page.mouse.move(400, 300)
+        await page.mouse.move(640, 360)
         await page.mouse.down()
-        await page.mouse.move(400, 299)  # Move one pixel in the -y direction
+        await page.mouse.move(640, 359)  # Move one pixel in the -y direction
         await page.mouse.up()
+
+        # Wait for a network request with a URL that ends with "channel.mp3"
+        await page.waitForRequest(lambda req: req.url.endswith("channel.mp3"))
 
         # Wait 3 seconds
         await asyncio.sleep(5)
 
         # Record 10 seconds of audio from the computer's main output
-        recording_duration = 5  # seconds
+        recording_duration = 10  # seconds
         recording_rate = 44100  # Hz
         recording_channels = 1  # Set number of channels to 1 (mono)
         recording = sd.rec(int(recording_duration * recording_rate), samplerate=recording_rate, channels=recording_channels, dtype='int16', device=6)
