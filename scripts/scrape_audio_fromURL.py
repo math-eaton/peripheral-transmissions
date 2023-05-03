@@ -4,6 +4,12 @@ from pyppeteer import launch
 from pydub import AudioSegment
 import sounddevice as sd
 import os
+import re
+import numpy as np
+import wavio
+
+def sanitize_filename(filename):
+    return re.sub(r'[\\/:"*?<>|]+', '_', filename)
 
 async def process_url(url):
     # Launch the browser
@@ -28,16 +34,28 @@ async def process_url(url):
         await asyncio.sleep(5)
 
         # Record 10 seconds of audio from the computer's main output
-        recording_duration = 10  # seconds
+        recording_duration = 5  # seconds
         recording_rate = 44100  # Hz
-        recording_channels = 2
-        recording = sd.rec(int(recording_duration * recording_rate), samplerate=recording_rate, channels=recording_channels)
+        recording_channels = 1  # Set number of channels to 1 (mono)
+        recording = sd.rec(int(recording_duration * recording_rate), samplerate=recording_rate, channels=recording_channels, dtype='int16')
         sd.wait()
 
-        # Save the audio output file with the name of its associated URL
-        audio_filename = f"{url.split('/')[-1]}.mp3"
-        audio = AudioSegment.from_numpy_array(recording, sample_width=2, channels=recording_channels, frame_rate=recording_rate)
+        # Save the audio output file with the name of its associated URL in the "audio" subfolder
+        sanitized_filename = sanitize_filename(url.split('/')[-1])
+        audio_filename = f"audio/{sanitized_filename}.mp3"
+        print(audio_filename)
+
+        # Save recording to a temporary WAV file
+        wav_filename = "temp_recording.wav"
+        wavio.write(wav_filename, recording, recording_rate, sampwidth=2)
+        print(wav_filename)
+
+        # Load the temporary WAV file with pydub and save as mp3
+        audio = AudioSegment.from_wav(wav_filename)
         audio.export(audio_filename, format="mp3")
+
+        # Remove the temporary WAV file
+        os.remove(wav_filename)
 
         # Close the browser window
         await page.close()
@@ -50,9 +68,12 @@ async def process_url(url):
 
 async def main():
     # Read the CSV file
-    with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/places_formatted.csv', 'r') as f:
+    with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/places_sample.csv', 'r') as f:
         reader = csv.DictReader(f)
         urls = [row['url'] for row in reader]
+
+    # Create the "audio" subfolder if it doesn't exist
+    os.makedirs('audio', exist_ok=True)
 
     # Process each URL
     for url in urls:
