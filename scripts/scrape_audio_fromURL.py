@@ -60,7 +60,7 @@ async def process_url(url, id):
             return
 
         # Refresh the page by navigating to the same URL again
-        await page.goto(url)
+        # await page.goto(url)
 
         # Wait 5 seconds
         print("waiting 5 seconds...")
@@ -115,9 +115,10 @@ async def process_url(url, id):
         wav_filename = "temp_recording.wav"
         wavio.write(wav_filename, recording, recording_rate, sampwidth=2)
 
-        # Load the temporary WAV file with pydub and save as mp3
+        # Convert the temporary WAV file to an MP3 file with a reduced bitrate
         audio = AudioSegment.from_wav(wav_filename)
-        audio.export(audio_filename, format="mp3")
+        audio_filename = os.path.join("audio", f"{id}.mp3")
+        audio.export(audio_filename, format="mp3", bitrate='32k')
         print(audio_filename)
 
         # Remove the temporary WAV file
