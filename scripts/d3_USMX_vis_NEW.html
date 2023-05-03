@@ -176,11 +176,11 @@
 
         // Load the GeoJSON data
         Promise.all([
-            d3.json("USMX_finalStationPoint.json"),
-            d3.json("USMX_finalStationLine_DISSOLVE.json"),
-            d3.json("ne_50m_land.json"),
-            d3.json("USMX_40_buffers.json"),
-            d3.json("ne_110m_graticules_10.json")
+            d3.json("data/USMX_finalStationPoint.json"),
+            d3.json("data/USMX_finalStationLine_DISSOLVE.json"),
+            d3.json("data/ne_50m_land.json"),
+            d3.json("data/USMX_40_buffers.json"),
+            d3.json("data/ne_110m_graticules_10.json")
         ]).then(([points, lines, coastline, buffers, graticule]) => {
 
             // Calculate the bounding box of the line features
