@@ -8,15 +8,15 @@ import re
 import numpy as np
 import wavio
 
-width = 1280
-height = 740
+width = 800
+height = 600
 
 def sanitize_filename(filename):
     return re.sub(r'[\\/:"*?<>|]+', '_', filename)
 
 async def process_url(url, id):
     # Launch the browser
-    browser = await launch(headless=True, args=[
+    browser = await launch(headless=False, args=[
     '--disable-blink-features=AutomationControlled',
     '--autoplay-policy=no-user-gesture-required',
     '--disable-gpu'])
@@ -50,7 +50,8 @@ async def process_url(url, id):
 
         try:
             # Set a 30-second timeout for loading the page and wait for the network to be idle
-            await asyncio.wait_for(page.goto(url, waitUntil='networkidle0'), timeout=30)
+            await asyncio.wait_for(page.goto(url, waitUntil='networkidle2'), timeout=30)
+            # await asyncio.wait_for(page.goto(url, waitUntil='domcontentloaded'), timeout=30)
         except asyncio.TimeoutError:
             print(f"Timeout while loading URL {url}")
             if page is not None and not page.isClosed():
@@ -59,18 +60,17 @@ async def process_url(url, id):
             return
 
         # Refresh the page by navigating to the same URL again
-        # await page.goto(url)
+        await page.goto(url)
 
-        # Wait 15 seconds
-        print("waiting 15 seconds...")
-        await asyncio.sleep(15)
+        # Wait 5 seconds
+        print("waiting 5 seconds...")
+        await asyncio.sleep(5)
 
-        # Click in the center of the webpage
-        print("clicking in center of page...")
-        await page.mouse.move(width/2, height/2)
-        await page.mouse.down()
-        # await page.mouse.move(width, height + 1)  # Move one pixel in the +y direction
-        await page.mouse.up()
+        # Click on the HTML element with the specified class
+        await page.waitForSelector('._control_oyndo_11._modPlay_oyndo_53')
+        element = await page.querySelector('._control_oyndo_11._modPlay_oyndo_53')
+        await element.click()
+        print("powering on")
 
         # Scroll down the page slightly
         print("scrolling a little ...")
@@ -90,15 +90,16 @@ async def process_url(url, id):
         # await page.mouse.move(width, height + 1)  # Move one pixel in the +y direction
         await page.mouse.up()
 
-        # Wait for a network request with a URL that ends with "channel.mp3"
-        # await page.waitForRequest(lambda req: req.url.endswith("channel.mp3"))
+        # Wait for the network request with the specified initiator
+        await page.waitForRequest(lambda req: 'channel.mp3' in req.url)
+        print("receiving!!!!!!!!!!")
 
-        # Wait 3 seconds
-        print("waiting 3 more secs ...")
-        await asyncio.sleep(3)
+        # Wait 5 seconds
+        print("waiting 5 more secs ...")
+        await asyncio.sleep(5)
 
         # Record 10 seconds of audio from the computer's main output
-        print("recording starting ...")
+        print("recording starting ... ... ... ")
         recording_duration = 10  # seconds
         recording_rate = 44100  # Hz
         recording_channels = 1  # Set number of channels to 1 (mono)
