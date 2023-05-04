@@ -114,28 +114,6 @@
         .scale(15000)
         .rotate([initialLongitude, -initialLatitude]);
 
-        // // Define the gradient
-        // var gradient = svg.append("svg:defs")
-        //     .append("svg:linearGradient")
-        //     .attr("id", "gradient")
-        //     .attr("x1", "0%")
-        //     .attr("y1", "0%")
-        //     .attr("x2", "100%")
-        //     .attr("y2", "100%")
-        //     .attr("spreadMethod", "pad");
-
-        // // Define the gradient colors
-        // gradient.append("svg:stop")
-        //     .attr("offset", "0%")
-        //     .attr("stop-color", "#a00000")
-        //     .attr("stop-opacity", 1);
-
-        // gradient.append("svg:stop")
-        //     .attr("offset", "100%")
-        //     .attr("stop-color", "#aaaa00")
-        //     .attr("stop-opacity", 1);
-
-
         // Define the path generator
         const path = d3.geoPath().projection(projection);
 
@@ -286,7 +264,25 @@
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
                 .attr("r", 5.5);
+                
+            // Create scrolling audio element
+            const scrollAudioElement = document.createElement("audio");
+            scrollAudioElement.loop = true;
+            const scrollSourceElement = document.createElement("source");
+            scrollSourceElement.src = "audio/scroll.mp3";
+            scrollSourceElement.type = "audio/mpeg";
+            scrollAudioElement.appendChild(scrollSourceElement);
+            document.body.appendChild(scrollAudioElement);
 
+            // Debounce scrolling audio
+            function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
 
             // Define the total scroll height based on the number of line segments
             const totalLineLength = lines.features.reduce((total, feature) => {
@@ -297,7 +293,11 @@
             // Set the scroll height based on the total line length
             const scrollHeight = totalLineLength * 25;
             document.querySelector('.scroll-container').style.height = `${scrollHeight}px`;
-            
+
+            // Store the last scroll position and timestamp
+            let lastScrollPosition = 0;
+            let lastScrollTimestamp = 0;
+
             // Reproject the map when the user scrolls
             function updateMapOnScroll() {
                 const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
@@ -365,27 +365,64 @@
                     const audioElement = bufferAudioElements[id];
 
                     if (turf.booleanPointInPolygon(endpoint, buffer)) {
-                        // Calculate the volume level based on the distance to the center of the buffer polygon
-                        const bufferCenter = turf.center(buffer);
-                        const distanceToCenter = turf.distance(endpoint, bufferCenter);
-                        const maxDistance = turf.length(turf.lineString(buffer.geometry.coordinates[0])) / 2;
-                        const volume = 1 - Math.log(distanceToCenter / maxDistance + 1) / Math.log(2);
+                    // Calculate the volume level based on the distance to the center of the buffer polygon
+                    const bufferCenter = turf.center(buffer);
+                    const distanceToCenter = turf.distance(endpoint, bufferCenter);
+                    const maxDistance = turf.length(turf.lineString(buffer.geometry.coordinates[0])) / 2;
+                    const volume = 1 - Math.log(distanceToCenter / maxDistance + 1) / Math.log(2);
 
-                        // Play the associated audio file with the calculated volume level
-                        audioElement.volume = volume;
-                        if (audioElement.paused) {
-                            audioElement.play();
-                        }
-                    } else {
-                        audioElement.pause();
+                    // Play the associated audio file with the calculated volume level
+                    audioElement.volume = volume;
+                    if (audioElement.paused) {
+                        audioElement.play();
                     }
+                } else {
+                    // Pause and reset the audio file when the line exits the polygon
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                }
+
+                // Determine the scroll speed
+                const currentScrollPosition = window.pageYOffset;
+                const currentScrollTimestamp = Date.now();
+                const scrollDelta = Math.abs(currentScrollPosition - lastScrollPosition);
+                const timeDelta = currentScrollTimestamp - lastScrollTimestamp;
+                
+                if (timeDelta > 0) {
+                    const scrollSpeed = scrollDelta / timeDelta;
+
+                    // Calculate the playback speed based on the scroll speed
+                    const maxSpeed = 0.01;
+                    let playbackSpeed = Math.min(scrollSpeed / maxSpeed, 1);
+                    playbackSpeed = Math.max(playbackSpeed, 0.0625); // Clamp the playback speed between 0.0625 and 1
+
+                    scrollAudioElement.playbackRate = playbackSpeed;
+
+                    // Play the scroll audio if the user is scrolling
+                    if (playbackSpeed > 0.0625) {
+                        if (scrollAudioElement.paused) {
+                            scrollAudioElement.play();
+                        }
+                    }
+                }
+
+                // Update the last scroll position and timestamp
+                lastScrollPosition = currentScrollPosition;
+                lastScrollTimestamp = currentScrollTimestamp;
+
                 });
+                
             }
 
     // Attach the function to the scroll event
     window.addEventListener('scroll', updateMapOnScroll, {
         passive: true
     });
+
+    // Add an event listener to pause the scroll audio when the user stops scrolling
+    window.addEventListener('scroll', debounce(() => {
+        scrollAudioElement.pause();
+    }, 100));
 
     document.addEventListener("DOMContentLoaded", function() {
         const audio1 = document.getElementById("audio-1");
