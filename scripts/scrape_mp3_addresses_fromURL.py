@@ -104,7 +104,7 @@ async def process_url(url, id):
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Write to JSON file
-    json_file_path = os.path.join(script_dir, 'scraped_channels.json')
+    json_file_path = os.path.join(script_dir, 'data/USMX_scraped_channels.json')
     data = {"id": id, "url": url, "mp3_url": mp3_url}
     with open(json_file_path, 'a', encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False)
@@ -112,7 +112,7 @@ async def process_url(url, id):
         print(f"Writing to scraped_channels.json: {data}")
 
     # Write to CSV file
-    csv_file_path = os.path.join(script_dir, 'scraped_channels.csv')
+    csv_file_path = os.path.join(script_dir, 'data/USMX_scraped_channels.csv')
     with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['id', 'url', 'mp3_url']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -123,7 +123,7 @@ async def process_url(url, id):
 
 async def main():
     # Read the CSV file
-    csv_file_path = '/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/places_formatted_NorthAmerica.csv'
+    csv_file_path = '/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/USMX_finalStationPoint.csv'
     with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:

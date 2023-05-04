@@ -1,0 +1,11 @@
+type,id,geometry/type,geometry/coordinates/0,geometry/coordinates/1,properties/OBJECTID,properties/size,properties/id,properties/geo_0,properties/geo_1,url,properties/boost,properties/title,properties/country
+Feature,42,Point,-100.17592999999994,26.50880200000006,42,1,weJeN7rH,-100.17593,26.508802,https://radio.garden/visit/sabinas-hidalgo/weJeN7rH,FALSE,Sabinas Hidalgo,Mexico
+Feature,43,Point,-99.54957599999994,27.477936000000057,43,1,SO5a4FYN,-99.549576,27.477936,https://radio.garden/visit/nuevo-laredo/SO5a4FYN,FALSE,Nuevo Laredo,Mexico
+Feature,44,Point,-99.48031999999995,27.530567000000076,44,4,F2KBNS1d,-99.48032,27.530567,https://radio.garden/visit/laredo-tx/F2KBNS1d,FALSE,Laredo TX,United States
+Feature,45,Point,-98.32529399999999,26.215906000000075,45,1,CgwMOndR,-98.325294,26.215906,https://radio.garden/visit/mission-tx/CgwMOndR,FALSE,Mission TX,United States
+Feature,46,Point,-98.29789999999997,26.05084000000005,46,6,4wq7uZtI,-98.2979,26.05084,https://radio.garden/visit/reynosa/4wq7uZtI,FALSE,Reynosa,Mexico
+Feature,47,Point,-98.23000999999994,26.203407000000027,47,6,PeOfDg3K,-98.23001,26.203407,https://radio.garden/visit/mcallen-tx/PeOfDg3K,FALSE,McAllen TX,United States
+Feature,48,Point,-98.16334499999994,26.30173700000006,48,1,ho85p2w6,-98.163345,26.301737,https://radio.garden/visit/edinburg-tx/ho85p2w6,FALSE,Edinburg TX,United States
+Feature,49,Point,-98.06972499999995,27.752249000000063,49,1,KksrkUAw,-98.069725,27.752249,https://radio.garden/visit/alice-tx/KksrkUAw,FALSE,Alice TX,United States
+Feature,50,Point,-97.99083999999999,26.159520000000043,50,1,eERGFdWC,-97.99084,26.15952,https://radio.garden/visit/weslaco-tx/eERGFdWC,FALSE,Weslaco TX,United States
+Feature,51,Point,-97.50273999999996,25.869030000000066,51,4,aAhfoCu1,-97.50274,25.86903,https://radio.garden/visit/matamoros/aAhfoCu1,FALSE,Matamoros,Mexico
