@@ -12,11 +12,15 @@ height = 600
 #     return re.sub(r'[\\/:"*?<>|]+', '_', filename)
 
 async def process_url(url, id):
+    max_retries = 3
+    retry_delay = 5
+
+    for attempt in range(1, max_retries + 1):
     # Launch the browser
-    browser = await launch(headless=True, args=[
-    '--disable-blink-features=AutomationControlled',
-    '--autoplay-policy=no-user-gesture-required',
-    '--disable-gpu'])
+        browser = await launch(headless=True, args=[
+        '--disable-blink-features=AutomationControlled',
+        '--autoplay-policy=no-user-gesture-required',
+        '--disable-gpu'])
 
     # Initialize variables
     page = None
@@ -94,32 +98,43 @@ async def process_url(url, id):
         # Save the mp3 URL
         mp3_url = req.url
 
-        # Close the browser window
+        if mp3_url:
+            # Write data directly to CSV and JSON files
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # Write to JSON file
+            json_file_path = os.path.join(script_dir, 'data/USMX_scraped_channels.json')
+            data = {"id": id, "url": url, "mp3_url": mp3_url}
+            with open(json_file_path, 'a', encoding='utf-8') as json_file:
+                json.dump(data, json_file, ensure_ascii=False)
+                json_file.write('\n')
+                print(f"Writing to scraped_channels.json: {data}")
+
+            # Write to CSV file
+            csv_file_path = os.path.join(script_dir, 'data/USMX_scraped_channels.csv')
+            with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['id', 'url', 'mp3_url']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writerow(data)
+                print(f"Writing to scraped_channels.csv: {data}")
+
+            return data
+        else:
+            raise Exception("mp3_url is empty")
+
     except Exception as e:
-        print(f"Error processing URL {url}: {e}")
+        print(f"Error processing URL {url} (attempt {attempt}): {e}")
         if page is not None and not page.isClosed():
             await page.close()
-
-    # Write data directly to CSV and JSON files
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Write to JSON file
-    json_file_path = os.path.join(script_dir, 'data/USMX_scraped_channels.json')
-    data = {"id": id, "url": url, "mp3_url": mp3_url}
-    with open(json_file_path, 'a', encoding='utf-8') as json_file:
-        json.dump(data, json_file, ensure_ascii=False)
-        json_file.write('\n')
-        print(f"Writing to scraped_channels.json: {data}")
-
-    # Write to CSV file
-    csv_file_path = os.path.join(script_dir, 'data/USMX_scraped_channels.csv')
-    with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['id', 'url', 'mp3_url']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writerow(data)
-        print(f"Writing to scraped_channels.csv: {data}")
-
-    return data
+        if attempt < max_retries:
+            print(f"Retrying in {retry_delay} seconds...")
+            await asyncio.sleep(retry_delay)
+        else:
+            print("Max retries reached, moving to the next URL.")
+            return {"id": id, "url": url, "mp3_url": ""}
+    
+    # Close the browser
+    await browser.close()
 
 async def main():
     # Read the CSV file

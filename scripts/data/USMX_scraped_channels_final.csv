@@ -1,3 +1,4 @@
+id,url,mp3_url
 1,https://radio.garden/visit/laguna-beach-ca/dM5tFD0M,https://radio.garden/api/ara/content/listen/dPC1oHYn/channel.mp3?r=1&1683173243377
 2,https://radio.garden/visit/lake-forest-ca/SpisAO9Y,https://radio.garden/api/ara/content/listen/r58FifSD/channel.mp3?r=1&1683173256184
 3,https://radio.garden/visit/oceanside-ca/YVG98PFm,https://radio.garden/api/ara/content/listen/17LtO0q4/channel.mp3?r=1&1683173270040
@@ -24,7 +25,6 @@
 24,https://radio.garden/visit/cananea/YuBBpDft,https://radio.garden/api/ara/content/listen/KXNEKdUs/channel.mp3?r=1&1683173705429
 25,https://radio.garden/visit/sierra-vista-az/SHsetBne,http://radio.garden/api/ara/content/listen/dJnSDKXc/channel.mp3?r=1&1683173726475
 26,https://radio.garden/visit/bisbee-az/rgjtbVuK,http://radio.garden/api/ara/content/listen/IBTw3Hcy/channel.mp3?r=1&1683173779159
-27,https://radio.garden/visit/nacozari-de-garcia/BOVEhEYI,
 28,https://radio.garden/visit/agua-prieta/beSF8lxU,https://radio.garden/api/ara/content/listen/ndqQ14fC/channel.mp3?r=1&1683173871342
 29,https://radio.garden/visit/casas-grandes/oBRoD8lz,https://radio.garden/api/ara/content/listen/E8b2DWaC/channel.mp3?r=1&1683173896604
 30,https://radio.garden/visit/nuevo-casas-grandes-municipality/3yHHr0GX,https://radio.garden/api/ara/content/listen/6CDS7zgM/channel.mp3?r=1&1683173928955
@@ -36,9 +36,17 @@
 36,https://radio.garden/visit/marfa-tx/F6EDTMIJ,https://radio.garden/api/ara/content/listen/qml2BzCX/channel.mp3?r=1&1683174273324
 37,https://radio.garden/visit/alpine-tx/PVxx08kT,https://radio.garden/api/ara/content/listen/dIvPTGDe/channel.mp3?r=1&1683174316044
 38,https://radio.garden/visit/muzquiz-municipality/QHAZvj8i,https://radio.garden/api/ara/content/listen/P-MFPaTv/channel.mp3?r=1&1683174381696
-42,https://radio.garden/visit/sabinas-hidalgo/weJeN7rH,
-43,https://radio.garden/visit/nuevo-laredo/SO5a4FYN,
-44,https://radio.garden/visit/laredo-tx/F2KBNS1d,
-45,https://radio.garden/visit/mission-tx/CgwMOndR,
-46,https://radio.garden/visit/reynosa/4wq7uZtI,
-47,https://radio.garden/visit/mcallen-tx/PeOfDg3K,
+42,https://radio.garden/visit/sabinas-hidalgo/weJeN7rH,https://radio.garden/api/ara/content/listen/9GfFMppp/channel.mp3?r=1&1683175301022
+43,https://radio.garden/visit/nuevo-laredo/SO5a4FYN,http://radio.garden/api/ara/content/listen/OmkBfvoa/channel.mp3?r=1&1683175313414
+44,https://radio.garden/visit/laredo-tx/F2KBNS1d,https://radio.garden/api/ara/content/listen/X13rGlj8/channel.mp3?r=1&1683175325666
+45,https://radio.garden/visit/mission-tx/CgwMOndR,https://radio.garden/api/ara/content/listen/sTLrMJYz/channel.mp3?r=1&1683175338567
+46,https://radio.garden/visit/reynosa/4wq7uZtI,https://radio.garden/api/ara/content/listen/B5nf4Spk/channel.mp3?r=1&1683175351869
+47,https://radio.garden/visit/mcallen-tx/PeOfDg3K,https://radio.garden/api/ara/content/listen/gtiWfhWS/channel.mp3?r=1&1683175367390
+48,https://radio.garden/visit/edinburg-tx/ho85p2w6,https://radio.garden/api/ara/content/listen/5W18ymXD/channel.mp3?r=1&1683175381137
+49,https://radio.garden/visit/alice-tx/KksrkUAw,https://radio.garden/api/ara/content/listen/HeCCPcqD/channel.mp3?r=1&1683175397130
+50,https://radio.garden/visit/weslaco-tx/eERGFdWC,https://radio.garden/api/ara/content/listen/W7wZ6X38/channel.mp3?r=1&1683175414672
+51,https://radio.garden/visit/matamoros/aAhfoCu1,https://radio.garden/api/ara/content/listen/bbuo49Jb/channel.mp3?r=1&1683175429687
+27,https://radio.garden/visit/nacozari-de-garcia/BOVEhEYI,https://radio.garden/api/ara/content/listen/ouN_5vDj/channel.mp3?r=1&1683175679194
+39,https://radio.garden/visit/sabinas/jUggBHbw,https://radio.garden/api/ara/content/listen/hMS-5ltk/channel.mp3?r=1&1683175695694
+40,https://radio.garden/visit/ciudad-acuna/X3hR8hby,https://radio.garden/api/ara/content/listen/jIZSByAe/channel.mp3?r=1&1683175712354
+41,https://radio.garden/visit/piedras-negras/gsDw6s8l,https://radio.garden/api/ara/content/listen/aDcVSw7f/channel.mp3?r=1&1683175726631

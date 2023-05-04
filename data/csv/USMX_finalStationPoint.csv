@@ -1,11 +1,5 @@
 type,id,geometry/type,geometry/coordinates/0,geometry/coordinates/1,properties/OBJECTID,properties/size,properties/id,properties/geo_0,properties/geo_1,url,properties/boost,properties/title,properties/country
-Feature,42,Point,-100.17592999999994,26.50880200000006,42,1,weJeN7rH,-100.17593,26.508802,https://radio.garden/visit/sabinas-hidalgo/weJeN7rH,FALSE,Sabinas Hidalgo,Mexico
-Feature,43,Point,-99.54957599999994,27.477936000000057,43,1,SO5a4FYN,-99.549576,27.477936,https://radio.garden/visit/nuevo-laredo/SO5a4FYN,FALSE,Nuevo Laredo,Mexico
-Feature,44,Point,-99.48031999999995,27.530567000000076,44,4,F2KBNS1d,-99.48032,27.530567,https://radio.garden/visit/laredo-tx/F2KBNS1d,FALSE,Laredo TX,United States
-Feature,45,Point,-98.32529399999999,26.215906000000075,45,1,CgwMOndR,-98.325294,26.215906,https://radio.garden/visit/mission-tx/CgwMOndR,FALSE,Mission TX,United States
-Feature,46,Point,-98.29789999999997,26.05084000000005,46,6,4wq7uZtI,-98.2979,26.05084,https://radio.garden/visit/reynosa/4wq7uZtI,FALSE,Reynosa,Mexico
-Feature,47,Point,-98.23000999999994,26.203407000000027,47,6,PeOfDg3K,-98.23001,26.203407,https://radio.garden/visit/mcallen-tx/PeOfDg3K,FALSE,McAllen TX,United States
-Feature,48,Point,-98.16334499999994,26.30173700000006,48,1,ho85p2w6,-98.163345,26.301737,https://radio.garden/visit/edinburg-tx/ho85p2w6,FALSE,Edinburg TX,United States
-Feature,49,Point,-98.06972499999995,27.752249000000063,49,1,KksrkUAw,-98.069725,27.752249,https://radio.garden/visit/alice-tx/KksrkUAw,FALSE,Alice TX,United States
-Feature,50,Point,-97.99083999999999,26.159520000000043,50,1,eERGFdWC,-97.99084,26.15952,https://radio.garden/visit/weslaco-tx/eERGFdWC,FALSE,Weslaco TX,United States
-Feature,51,Point,-97.50273999999996,25.869030000000066,51,4,aAhfoCu1,-97.50274,25.86903,https://radio.garden/visit/matamoros/aAhfoCu1,FALSE,Matamoros,Mexico
+Feature,27,Point,-109.68753999999996,30.375343000000044,27,1,BOVEhEYI,-109.68754,30.375343,https://radio.garden/visit/nacozari-de-garcia/BOVEhEYI,FALSE,Nacozari de García,Mexico
+Feature,39,Point,-101.13342999999998,27.864784000000043,39,1,jUggBHbw,-101.13343,27.864784,https://radio.garden/visit/sabinas/jUggBHbw,FALSE,Sabinas,Mexico
+Feature,40,Point,-100.95141599999994,29.323296000000028,40,2,X3hR8hby,-100.951416,29.323296,https://radio.garden/visit/ciudad-acuna/X3hR8hby,FALSE,Ciudad Acuña,Mexico
+Feature,41,Point,-100.54085999999995,28.691618000000062,41,6,gsDw6s8l,-100.54086,28.691618,https://radio.garden/visit/piedras-negras/gsDw6s8l,FALSE,Piedras Negras,Mexico

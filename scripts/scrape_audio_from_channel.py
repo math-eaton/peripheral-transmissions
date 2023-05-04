@@ -1,5 +1,6 @@
 import asyncio
 import csv
+import pyppeteer
 from pyppeteer import launch
 from pydub import AudioSegment
 import sounddevice as sd
@@ -19,6 +20,7 @@ async def process_url(url, id):
     browser = await launch(headless=False, args=[
     '--disable-blink-features=AutomationControlled',
     '--autoplay-policy=no-user-gesture-required',
+    '--disable-download-extensions'
     '--disable-gpu'])
     page = None
 
@@ -26,6 +28,9 @@ async def process_url(url, id):
         # Open the webpage
         page = await browser.newPage()
         print("opening new page")
+
+        page.on('console', lambda msg: print(f'Page log: {msg.text()}'))
+        await page.setJavaScriptEnabled(False)
 
         # Set the user agent to a common browser user agent
         await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36")
@@ -48,57 +53,50 @@ async def process_url(url, id):
             );
         }''')
 
-        try:
-            # Set a 30-second timeout for loading the page and wait for the network to be idle
-            await asyncio.wait_for(page.goto(url, waitUntil='networkidle2'), timeout=30)
-            # await asyncio.wait_for(page.goto(url, waitUntil='domcontentloaded'), timeout=30)
-        except asyncio.TimeoutError:
-            print(f"Timeout while loading URL {url}")
-            if page is not None and not page.isClosed():
-                await page.close()
-            await browser.close()
-            return
+        # Create an HTML page containing an audio element with the MP3 URL as its source, and load this HTML page in the browser
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="UTF-8">
+        </head>
+        <body>
+        <audio controls autoplay>
+          <source src="{url}" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+        </body>
+        </html>
+        """
+        await page.setContent(html_content)
 
-        # Refresh the page by navigating to the same URL again
-        # await page.goto(url)
 
-        # Wait 5 seconds
-        print("waiting 5 seconds...")
-        await asyncio.sleep(5)
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                await asyncio.wait_for(page.goto(url, waitUntil='networkidle2'), timeout=30)
+                break
+            except (asyncio.TimeoutError, pyppeteer.errors.PageError) as e:
+                print(f"Attempt {attempt}: Error while loading URL {url}: {e}")
+                if attempt == max_retries:
+                    print(f"Failed to load URL {url} after {max_retries} attempts")
+                    if page is not None and not page.isClosed():
+                        await page.close()
+                    await browser.close()
+                    return
+                else:
+                    await asyncio.sleep(2)  # Sleep for 2 seconds before retrying
 
-        # Click on the HTML element with the specified class
-        await page.waitForSelector('._control_oyndo_11._modPlay_oyndo_53')
-        element = await page.querySelector('._control_oyndo_11._modPlay_oyndo_53')
-        await element.click()
         print("powering on")
 
-        # Scroll down the page slightly
-        print("scrolling a little ...")
-        await page.evaluate("window.scrollBy(0, -250)")
+        # Wait for the network request with the specified resource type
+        # await page.waitForRequest(lambda req: req.resourceType == 'media')
 
-        # Click and drag in the center of the webpage
-        print("draagging me ...")
-        await page.mouse.move(width/2, height/2)
-        await page.mouse.down()
-        await page.mouse.move(width/2, height/2 - 1)  # Move one pixel in the -y direction
-        await page.mouse.up()
+        # Wait 3 seconds
+        print("waiting 3 secs ...")
+        await asyncio.sleep(3)
 
-        # Click in the center of the webpage
-        print("clicking in center of page...")
-        await page.mouse.move(width/2, height/2)
-        await page.mouse.down()
-        # await page.mouse.move(width, height + 1)  # Move one pixel in the +y direction
-        await page.mouse.up()
-
-        # Wait for the network request with the specified initiator
-        await page.waitForRequest(lambda req: 'channel.mp3' in req.url)
-        print("receiving!!!!!!!!!!")
-
-        # Wait 5 seconds
-        print("waiting 5 more secs ...")
-        await asyncio.sleep(5)
-
-        # Record 10 seconds of audio from the computer's main output
+        # Record 10 seconds         # Record 10 seconds of audio from the computer's main output
         print("recording starting ... ... ... ")
         recording_duration = 10  # seconds
         recording_rate = 44100  # Hz
@@ -108,8 +106,8 @@ async def process_url(url, id):
         print("recording complete!")
 
         # Save the audio output file with the name of its associated URL in the "audio" subfolder
-        sanitized_filename = sanitize_filename(url.split('/')[-1])
-        audio_filename = f"audio/{sanitized_filename}.mp3"
+        sanitized_filename = sanitize_filename(id.split('/')[-1])
+        audio_filename = os.path.join("audio", f"{sanitized_filename}.mp3")
 
         # Save recording to a temporary WAV file
         wav_filename = "temp_recording.wav"
@@ -117,38 +115,36 @@ async def process_url(url, id):
 
         # Convert the temporary WAV file to an MP3 file with a reduced bitrate
         audio = AudioSegment.from_wav(wav_filename)
-        audio_filename = os.path.join("audio", f"{id}.mp3")
         audio.export(audio_filename, format="mp3", bitrate='32k')
-        print(audio_filename)
+        print("audio saved as " + audio_filename + " in " + os.path.abspath(audio_filename))
 
         # Remove the temporary WAV file
         os.remove(wav_filename)
 
+
         # Close the browser window
     except Exception as e:
-        print(f"Error processing URL {url}: {e}")
-        if page is not None and not page.isClosed():
-            await page.close()
+        print(f"An error occurred: {e}")
+        # Rest of the code
 
-    # Close the browser
-    await browser.close()
+    # Close the browser window
+    if page is not None and not page.isClosed():
+        await browser.close()
 
+    # Close the page
+    # await page.close()
 
 async def main():
     # Read the CSV file
     with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/scripts/data/USMX_scraped_channels_final.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
+        # Create the "audio" subfolder if it doesn't exist
+        os.makedirs('audio', exist_ok=True)
         for row in reader:
             url = row['mp3_url']
-            id = row['id']
+            id = row['url']
             print(f"Processing URL: {url}")
             await process_url(url, id)
 
-    # Create the "audio" subfolder if it doesn't exist
-    os.makedirs('audio', exist_ok=True)
-
-    # # Process each URL
-    # for url in urls:
-    #     await process_url(url)
-
-asyncio.run(main())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
