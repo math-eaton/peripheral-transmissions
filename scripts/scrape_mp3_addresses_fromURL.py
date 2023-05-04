@@ -3,6 +3,7 @@ import csv
 from pyppeteer import launch
 import os
 import re
+import json
 
 width = 800
 height = 600
@@ -57,9 +58,9 @@ async def process_url(url, id):
             await browser.close()
             return
 
-        # Wait 5 seconds
-        print("waiting 5 seconds...")
-        await asyncio.sleep(5)
+        # # Wait 5 seconds
+        # print("waiting 5 seconds...")
+        # await asyncio.sleep(5)
 
         # Click on the HTML element with the specified class
         await page.waitForSelector('._control_oyndo_11._modPlay_oyndo_53')
@@ -86,6 +87,7 @@ async def process_url(url, id):
         await page.mouse.up()
 
         # Wait for the network request with the specified initiator
+        print("tuning the radio...")
         req = await page.waitForRequest(lambda req: 'channel.mp3' in req.url)
         print("receiving " + req.url)
 
@@ -98,32 +100,36 @@ async def process_url(url, id):
         if page is not None and not page.isClosed():
             await page.close()
 
-    # Close the browser
-    await browser.close()
+    # Write data directly to CSV and JSON files
+    script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    return id, mp3_url
+    # Write to JSON file
+    json_file_path = os.path.join(script_dir, 'scraped_channels.json')
+    data = {"id": id, "url": url, "mp3_url": mp3_url}
+    with open(json_file_path, 'a', encoding='utf-8') as json_file:
+        json.dump(data, json_file, ensure_ascii=False)
+        json_file.write('\n')
+        print(f"Writing to scraped_channels.json: {data}")
+
+    # Write to CSV file
+    csv_file_path = os.path.join(script_dir, 'scraped_channels.csv')
+    with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['id', 'url', 'mp3_url']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writerow(data)
+        print(f"Writing to scraped_channels.csv: {data}")
+
+    return data
 
 async def main():
     # Read the CSV file
     csv_file_path = '/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/places_formatted_NorthAmerica.csv'
     with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
-        radio_data = []
         for row in reader:
             url = row['url']
             id = row['id']
             print(f"Processing URL: {url}")
-            id, mp3_url = await process_url(url, id)
-            row["radio_URL"] = mp3_url
-            radio_data.append(row)
-
-    # Write the modified CSV file
-    new_csv_file_path = 'places_formatted_NorthAmerica_with_radio_URL.csv'
-    with open(new_csv_file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = reader.fieldnames + ['radio_URL']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in radio_data:
-            writer.writerow(row)
+            await process_url(url, id)
 
 asyncio.run(main())
