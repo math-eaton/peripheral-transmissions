@@ -53,28 +53,11 @@ async def process_url(url, id):
             );
         }''')
 
-        # Create an HTML page containing an audio element with the MP3 URL as its source, and load this HTML page in the browser
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <meta charset="UTF-8">
-        </head>
-        <body>
-        <audio controls autoplay>
-          <source src="{url}" type="audio/mpeg">
-          Your browser does not support the audio element.
-        </audio>
-        </body>
-        </html>
-        """
-        await page.setContent(html_content)
-
-
         max_retries = 3
         for attempt in range(1, max_retries + 1):
             try:
-                await asyncio.wait_for(page.goto(url, waitUntil='networkidle2'), timeout=30)
+                await asyncio.wait_for(page.goto(url), timeout=30)
+                await asyncio.sleep(3)  # Wait for 3 seconds
                 break
             except (asyncio.TimeoutError, pyppeteer.errors.PageError) as e:
                 print(f"Attempt {attempt}: Error while loading URL {url}: {e}")
@@ -96,7 +79,7 @@ async def process_url(url, id):
         print("waiting 3 secs ...")
         await asyncio.sleep(3)
 
-        # Record 10 seconds         # Record 10 seconds of audio from the computer's main output
+        # Record 20 seconds of audio from the computer's main output
         print("recording starting ... ... ... ")
         recording_duration = 10  # seconds
         recording_rate = 44100  # Hz

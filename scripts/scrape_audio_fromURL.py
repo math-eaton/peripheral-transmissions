@@ -136,10 +136,10 @@ async def process_url(url, id):
 
 async def main():
     # Read the CSV file
-    with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/scripts/data/USMX_scraped_channels_final.csv', newline='', encoding='utf-8') as csvfile:
+    with open('/Users/matthewheaton/Documents/GitHub/peripheral-transmissions/data/csv/USMX_finalStationPoint.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            url = row['mp3_url']
+            url = row['url']
             id = row['id']
             print(f"Processing URL: {url}")
             await process_url(url, id)

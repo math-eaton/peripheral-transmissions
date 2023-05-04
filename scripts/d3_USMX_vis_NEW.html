@@ -231,6 +231,22 @@
                 .attr("d", path)
                 .attr("class", "graticule");
 
+            // Load the buffer polygons and their associated audio files
+            const bufferAudioElements = {};
+
+            buffers.features.forEach(buffer => {
+                const id = buffer.properties.id;
+                const audioElement = document.createElement("audio");
+                audioElement.loop = true;
+                const sourceElement = document.createElement("source");
+                sourceElement.src = `audio/${id}.mp3`;
+                sourceElement.type = "audio/mpeg";
+                audioElement.appendChild(sourceElement);
+                bufferAudioElements[id] = audioElement;
+                document.body.appendChild(audioElement);
+            });
+
+
             // Draw the buffers
             svg.append("g")
                 .selectAll("path")
@@ -342,10 +358,29 @@
 
                 }
 
-                // Update the audio volumes based on the scroll percentage
-                updateAudioVolumes(currentScrollPercentage);
-            }
+                // Determine when the animated line intersects a buffer polygon
+                const endpoint = turf.point(visibleLinePoints[visibleLinePoints.length - 1]);
+                buffers.features.forEach(buffer => {
+                    const id = buffer.properties.id;
+                    const audioElement = bufferAudioElements[id];
 
+                    if (turf.booleanPointInPolygon(endpoint, buffer)) {
+                        // Calculate the volume level based on the distance to the center of the buffer polygon
+                        const bufferCenter = turf.center(buffer);
+                        const distanceToCenter = turf.distance(endpoint, bufferCenter);
+                        const maxDistance = turf.length(turf.lineString(buffer.geometry.coordinates[0])) / 2;
+                        const volume = 1 - Math.log(distanceToCenter / maxDistance + 1) / Math.log(2);
+
+                        // Play the associated audio file with the calculated volume level
+                        audioElement.volume = volume;
+                        if (audioElement.paused) {
+                            audioElement.play();
+                        }
+                    } else {
+                        audioElement.pause();
+                    }
+                });
+            }
 
     // Attach the function to the scroll event
     window.addEventListener('scroll', updateMapOnScroll, {
