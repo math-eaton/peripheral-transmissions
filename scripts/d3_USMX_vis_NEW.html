@@ -87,15 +87,6 @@
         <svg></svg>
     </div>
     <h2 id="latlong-display"></h2>
-    <audio id="audio-1" loop>
-        <source src="audio-file-1.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-    
-    <audio id="audio-2" loop>
-        <source src="audio-file-2.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>  
     <script>
         // Width and height of the SVG
         const width = 1280;
@@ -132,6 +123,43 @@
             audio2.volume = scrollPercentage;
         }
 
+        function fadeInAudio(audioElement, duration) {
+            if (audioElement.paused) {
+                audioElement.play();
+            }
+            const startVolume = audioElement.volume;
+            const startTime = Date.now();
+
+            function increaseVolume() {
+                const elapsed = Date.now() - startTime;
+                if (elapsed < duration) {
+                audioElement.volume = startVolume + (1 - startVolume) * (elapsed / duration);
+                requestAnimationFrame(increaseVolume);
+                } else {
+                audioElement.volume = 1;
+                }
+            }
+
+            increaseVolume();
+            }
+
+        function fadeOutAudio(audioElement, duration) {
+            const startVolume = audioElement.volume;
+            const startTime = Date.now();
+
+            function decreaseVolume() {
+                const elapsed = Date.now() - startTime;
+                if (elapsed < duration) {
+                audioElement.volume = startVolume * (1 - elapsed / duration);
+                requestAnimationFrame(decreaseVolume);
+                } else {
+                audioElement.volume = 0;
+                audioElement.pause();
+                }
+            }
+
+            decreaseVolume();
+            }
 
         function clipToBoundingBox(feature, boundingBox) {
             const clipped = turf.bboxClip(feature, boundingBox);
@@ -302,6 +330,9 @@
             function updateMapOnScroll() {
                 const currentScrollPercentage = window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
 
+                // Fade in the scroll audio when the user starts scrolling
+                fadeInAudio(scrollAudioElement, 20); // 20ms fade-in duration
+
                 // Reveal more of the line as the user scrolls
                 let visibleLinePoints = [];
                 lineGroup.each(function(d, i) {
@@ -382,33 +413,7 @@
                     audioElement.currentTime = 0;
                 }
 
-                // Determine the scroll speed
-                const currentScrollPosition = window.pageYOffset;
-                const currentScrollTimestamp = Date.now();
-                const scrollDelta = Math.abs(currentScrollPosition - lastScrollPosition);
-                const timeDelta = currentScrollTimestamp - lastScrollTimestamp;
-                
-                if (timeDelta > 0) {
-                    const scrollSpeed = scrollDelta / timeDelta;
-
-                    // Calculate the playback speed based on the scroll speed
-                    const maxSpeed = 0.01;
-                    let playbackSpeed = Math.min(scrollSpeed / maxSpeed, 1);
-                    playbackSpeed = Math.max(playbackSpeed, 0.0625); // Clamp the playback speed between 0.0625 and 1
-
-                    scrollAudioElement.playbackRate = playbackSpeed;
-
-                    // Play the scroll audio if the user is scrolling
-                    if (playbackSpeed > 0.0625) {
-                        if (scrollAudioElement.paused) {
-                            scrollAudioElement.play();
-                        }
-                    }
-                }
-
-                // Update the last scroll position and timestamp
-                lastScrollPosition = currentScrollPosition;
-                lastScrollTimestamp = currentScrollTimestamp;
+                scrollAudioElement.playbackRate = 1;
 
                 });
                 
@@ -421,8 +426,8 @@
 
     // Add an event listener to pause the scroll audio when the user stops scrolling
     window.addEventListener('scroll', debounce(() => {
-        scrollAudioElement.pause();
-    }, 100));
+        fadeOutAudio(scrollAudioElement, 20); // 20ms fade-out duration
+        }, 100));
 
     document.addEventListener("DOMContentLoaded", function() {
         const audio1 = document.getElementById("audio-1");
