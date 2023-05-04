@@ -80,13 +80,31 @@
             stroke-dasharray: 8 2 4;
             fill: none;
         }
+        #startButton{
+            position: fixed; 
+            top: 40%; 
+            right: 45%; 
+            z-index: 100;
+            font-size: 48pt;
+            scale: 500%;
+            font-family: 'VT323', monospace;
+            /* font-family: 'Azeret Mono', monospace; */
+            transform: scale(2, 2.75);         
+            color:rgb(55, 0, 255);
+            background-color: black;
+            /* opacity: 60%; */
+        }
     </style>
 </head>
 <body>
+    <button id="startButton">Start</button>
     <div class="scroll-container">
         <svg></svg>
     </div>
     <h2 id="latlong-display"></h2>
+    <audio id="scrollAudio" loop>
+        <source src="scroll.mp3" type="audio/mpeg" />
+      </audio>      
     <script>
         // Width and height of the SVG
         const width = 1280;
@@ -413,11 +431,11 @@
                     audioElement.currentTime = 0;
                 }
 
-                scrollAudioElement.playbackRate = 1;
+            scrollAudioElement.playbackRate = 1;
 
-                });
+            });
                 
-            }
+        }
 
     // Attach the function to the scroll event
     window.addEventListener('scroll', updateMapOnScroll, {
@@ -429,16 +447,21 @@
         fadeOutAudio(scrollAudioElement, 20); // 20ms fade-out duration
         }, 100));
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const audio1 = document.getElementById("audio-1");
-        const audio2 = document.getElementById("audio-2");
-        audio1.play();
-        audio2.play();
-    });
-
     // Call updateMapOnScroll with initial scroll percentage of 1%
     updateMapOnScroll(0.01);
 });
+
+// Add this function to handle the button click
+function START() {
+    const startButton = document.getElementById("startButton");
+    startButton.style.display = "none"; // Hide the start button
+
+    const scrollAudioElement = document.getElementById("scrollAudio");
+    scrollAudioElement.play(); // Play the scroll audio element
+}
+
+// Add an event listener for the button click
+document.getElementById("startButton").addEventListener("click", START);
 
     </script>
 </body>
