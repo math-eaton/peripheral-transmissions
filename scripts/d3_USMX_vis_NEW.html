@@ -72,7 +72,7 @@
         .buffer{
             stroke:rgba(55, 0, 255, 0.437);
             stroke-width:0;
-            fill: rgba(255, 0, 255, 0.15);
+            /* fill: rgba(); */
         }
         .graticule{
             stroke: aqua;
@@ -86,7 +86,7 @@
             right: 45%; 
             z-index: 100;
             font-size: 48pt;
-            scale: 500%;
+            scale: 250%;
             font-family: 'VT323', monospace;
             /* font-family: 'Azeret Mono', monospace; */
             transform: scale(2, 2.75);         
@@ -103,7 +103,6 @@
     </div>
     <h2 id="latlong-display"></h2>
     <audio id="scrollAudio" loop>
-        <source src="scroll.mp3" type="audio/mpeg" />
       </audio>      
     <script>
         // Width and height of the SVG
@@ -228,15 +227,6 @@
                 .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
                 .filter(feature => feature !== null);
 
-            // Draw the marine poly
-            // svg.append("g")
-            //     .selectAll("path")
-            //     .data(marine.features)
-            //     .enter()
-            //     .append("path")
-            //     .attr("d", path)
-            //     .attr("class", "marine");
-
             // Draw the coastline
             svg.append("g")
                 .selectAll("path")
@@ -270,6 +260,30 @@
                 document.body.appendChild(audioElement);
             });
 
+            // Create the radial gradient
+            const radialGradient = svg.append("defs")
+                .append("radialGradient")
+                .attr("id", "buffer-gradient")
+                .attr("cx", "50%")
+                .attr("cy", "50%")
+                .attr("r", "50%")
+                .attr("fx", "50%")
+                .attr("fy", "50%");
+
+            radialGradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "rgba(255, 0, 255, .8)")
+                .attr("stop-opacity", 1);
+
+            radialGradient.append("stop")
+            .attr("offset", "66.6%")
+            .attr("stop-color", "rgb(255, 0, 255, .3)")
+            .attr("stop-opacity", 1);
+
+            radialGradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "rgb(255, 0, 255, 0)")
+                .attr("stop-opacity", 1);
 
             // Draw the buffers
             svg.append("g")
@@ -278,10 +292,9 @@
                 .enter()
                 .append("path")
                 .attr("d", path)
-                .attr("class", "buffer")
-                .attr('fill', 'url(#gradient)');
-
-
+                .attr('fill', 'url(#buffer-gradient)')
+                .attr("class", "buffer");
+            
             // Draw the radio lines
             const lineGroup = svg.append("g")
                 .selectAll("path")
@@ -315,10 +328,47 @@
             const scrollAudioElement = document.createElement("audio");
             scrollAudioElement.loop = true;
             const scrollSourceElement = document.createElement("source");
-            scrollSourceElement.src = "audio/scroll.mp3";
+            scrollSourceElement.src = "audio/pinkNoise.mp3";
             scrollSourceElement.type = "audio/mpeg";
             scrollAudioElement.appendChild(scrollSourceElement);
             document.body.appendChild(scrollAudioElement);
+
+            // Create gap audio element
+            const gapAudioElement = document.createElement("audio");
+            gapAudioElement.loop = true;
+            const gapSourceElement = document.createElement("source");
+            gapSourceElement.src = "audio/gap.mp3";
+            gapSourceElement.type = "audio/mpeg";
+            gapAudioElement.appendChild(gapSourceElement);
+            document.body.appendChild(gapAudioElement);
+
+            let gapAudioFadeInterval;
+            function fadeInGapAudio() {
+                if (gapAudioFadeInterval) {
+                    clearInterval(gapAudioFadeInterval);
+                }
+                gapAudioFadeInterval = setInterval(() => {
+                    gapAudioElement.volume = Math.min(gapAudioElement.volume + 0.05, 1);
+                    if (gapAudioElement.volume === 1) {
+                        clearInterval(gapAudioFadeInterval);
+                    }
+                }, 20);
+                
+            }
+
+            function fadeOutGapAudio() {
+                if (gapAudioFadeInterval) {
+                    clearInterval(gapAudioFadeInterval);
+                }
+                gapAudioFadeInterval = setInterval(() => {
+                    gapAudioElement.volume = Math.max(gapAudioElement.volume - 0.05, 0);
+                    if (gapAudioElement.volume === 0) {
+                        clearInterval(gapAudioFadeInterval);
+                        gapAudioElement.pause();
+                    }
+                }, 20);
+            }
+
 
             // Debounce scrolling audio
             function debounce(func, wait) {
@@ -409,32 +459,47 @@
 
                 // Determine when the animated line intersects a buffer polygon
                 const endpoint = turf.point(visibleLinePoints[visibleLinePoints.length - 1]);
+                // const endpointLatLng = endpoint.geometry.coordinates
+                let isInBuffer = false;
+                //TODO: THIS ISN'T CORRECT
+                console.log(isInBuffer)
+
+
                 buffers.features.forEach(buffer => {
                     const id = buffer.properties.id;
                     const audioElement = bufferAudioElements[id];
+                    // console.log(endpointLatLng)
 
                     if (turf.booleanPointInPolygon(endpoint, buffer)) {
-                    // Calculate the volume level based on the distance to the center of the buffer polygon
-                    const bufferCenter = turf.center(buffer);
-                    const distanceToCenter = turf.distance(endpoint, bufferCenter);
-                    const maxDistance = turf.length(turf.lineString(buffer.geometry.coordinates[0])) / 2;
-                    const volume = 1 - Math.log(distanceToCenter / maxDistance + 1) / Math.log(2);
+                        const bufferCenter = turf.center(buffer);
+                        const distanceToCenter = turf.distance(endpoint, bufferCenter);
+                        const maxDistance = turf.length(turf.lineString(buffer.geometry.coordinates[0])) / 2;
+                        const volume = 1 - Math.log(distanceToCenter / maxDistance + 1) / Math.log(2);
 
-                    // Play the associated audio file with the calculated volume level
-                    audioElement.volume = volume;
-                    if (audioElement.paused) {
-                        audioElement.play();
+                        isInBuffer = true;
+
+                        audioElement.volume = volume;
+                        if (audioElement.paused) {
+                            audioElement.play();
+                        }
+                    } else {
+                        audioElement.pause();
+                        audioElement.currentTime = 0;
+                    }
+                });
+
+                if (!isInBuffer) {
+                    fadeInGapAudio();
+                    if (gapAudioElement.paused) {
+                        gapAudioElement.play();
                     }
                 } else {
-                    // Pause and reset the audio file when the line exits the polygon
-                    audioElement.pause();
-                    audioElement.currentTime = 0;
+                    fadeOutGapAudio();
                 }
 
+                
             scrollAudioElement.playbackRate = 1;
 
-            });
-                
         }
 
     // Attach the function to the scroll event
