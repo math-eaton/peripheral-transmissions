@@ -5,9 +5,10 @@ the browser-based tuner will enable the user to survey an audio landscape constr
 
 ~~
 <br>
-<i>
+
 
 ## todo: 
+<i>
 <ul>
     <li>update placeholder audio with scraped samples</li>
     <li>add unity mixdown</li>
