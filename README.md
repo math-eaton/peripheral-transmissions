@@ -14,5 +14,6 @@ the browser-based tuner will enable the user to survey an audio landscape constr
     <li>add unity mixdown</li>
     <li>add audio crossfade behavior, proximity to buffer centroid</li>
     <li>temporal component? alternative linear space @ time zones</li>
+    <li>mobile support</li>
 </ul>
 </i>
