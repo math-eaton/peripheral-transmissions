@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:ital,wght@0,300;1,400&family=Inter&family=Syne+Mono&family=VT323&family=Xanh+Mono&display=swap" rel="stylesheet">    <style>
         body {
         margin: 0;
-        background: rgb(55, 0, 235);
+        background: rgb(55, 0, 185);
         overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         h2 {
@@ -48,16 +48,16 @@
         }
         .point {
             fill: palegreen;
-            stroke: aqua;
-            stroke-width: .25;
+            stroke: rgba(152, 251, 152, 0.865);
+            stroke-width: 2;
         }
         .line {
             fill: none;
             stroke: palegreen;
-            stroke-width: 3;
+            stroke-width: 3.5;
         }
         .coast{
-            fill: rgba(55, 0, 255, 0.437);
+            fill: rgba(55, 0, 200, 0.437);
             stroke:black;
             stroke-width: 1;
             /* outline: 10px;
@@ -90,7 +90,7 @@
             font-family: 'VT323', monospace;
             /* font-family: 'Azeret Mono', monospace; */
             transform: scale(2, 2.75);         
-            color:rgb(55, 0, 255);
+            color:rgb(55, 0, 200);
             background-color: black;
             /* opacity: 60%; */
         }
@@ -227,6 +227,25 @@
                 .map(feature => clipToBoundingBox(feature, expandedBoundingBox))
                 .filter(feature => feature !== null);
 
+            // Create the linear gradient
+            const linearGradient = svg.append("defs")
+                .append("linearGradient")
+                .attr("id", "coast-gradient")
+                .attr("x1", "0%")
+                .attr("y1", "0%")
+                .attr("x2", "0%")
+                .attr("y2", "100%");
+
+            linearGradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "rgb(0, 0, 255)") // Modify colors as needed
+                .attr("stop-opacity", 1);
+
+            linearGradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "rgb(255, 255, 255)") // Modify colors as needed
+                .attr("stop-opacity", 1);
+
             // Draw the coastline
             svg.append("g")
                 .selectAll("path")
@@ -235,6 +254,15 @@
                 .append("path")
                 .attr("d", path)
                 .attr("class", "coast");
+
+            // Draw the coastline gradient
+            // svg.append("g")
+            //     .selectAll("path")
+            //     .data(coastline.features)
+            //     .enter()
+            //     .append("path")
+            //     .attr("d", path)
+            //     .attr("fill", "url(#coast-gradient)");
 
             // Draw the graticule
             svg.append("g")
@@ -322,7 +350,7 @@
                 .attr("class", "point")
                 .attr("cx", d => projection(d.geometry.coordinates)[0])
                 .attr("cy", d => projection(d.geometry.coordinates)[1])
-                .attr("r", 5.5);
+                .attr("r", 4);
                 
             // Create scrolling audio element
             const scrollAudioElement = document.createElement("audio");
